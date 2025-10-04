@@ -3764,6 +3764,135 @@ public func FfiConverterTypeForeignPersisterLink_lower(_ value: ForeignPersister
 
 
 
+public protocol InvoiceResponseProtocol : AnyObject {
+    
+    func bolt11Invoice() throws  -> String
+    
+    func completePay() throws  -> Bool
+    
+}
+
+open class InvoiceResponse:
+    InvoiceResponseProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_invoiceresponse(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_invoiceresponse(pointer, $0) }
+    }
+
+    
+
+    
+open func bolt11Invoice()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_invoiceresponse_bolt11_invoice(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func completePay()throws  -> Bool {
+    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_invoiceresponse_complete_pay(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeInvoiceResponse: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = InvoiceResponse
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> InvoiceResponse {
+        return InvoiceResponse(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: InvoiceResponse) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> InvoiceResponse {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: InvoiceResponse, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeInvoiceResponse_lift(_ pointer: UnsafeMutableRawPointer) throws -> InvoiceResponse {
+    return try FfiConverterTypeInvoiceResponse.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeInvoiceResponse_lower(_ value: InvoiceResponse) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeInvoiceResponse.lower(value)
+}
+
+
+
+
 /**
  * The details of an issuance or reissuance
  */
@@ -4026,6 +4155,177 @@ public func FfiConverterTypeIssuance_lift(_ pointer: UnsafeMutableRawPointer) th
 #endif
 public func FfiConverterTypeIssuance_lower(_ value: Issuance) -> UnsafeMutableRawPointer {
     return FfiConverterTypeIssuance.lower(value)
+}
+
+
+
+
+/**
+ * A session to pay and receive lightning payments.
+ *
+ * Lightning payments are done via LBTC swaps using Boltz.
+ */
+public protocol LightningSessionProtocol : AnyObject {
+    
+    /**
+     * Create a new invoice for a given amount and a claim address to receive the payment
+     */
+    func invoice(amount: UInt64, description: String?, claimAddress: Address) throws  -> InvoiceResponse
+    
+    /**
+     * Prepare to pay a bolt11 invoice
+     */
+    func preparePay(invoice: String, refundAddress: Address) throws  -> PreparePayResponse
+    
+}
+
+/**
+ * A session to pay and receive lightning payments.
+ *
+ * Lightning payments are done via LBTC swaps using Boltz.
+ */
+open class LightningSession:
+    LightningSessionProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_lightningsession(self.pointer, $0) }
+    }
+    /**
+     * Create the lightning session
+     *
+     * TODO: is there a way to pass the electrum client directly? cannot use Arc::try_unwrap because uniffi keeps references around
+     */
+public convenience init(network: Network, client: ElectrumClient, timeout: UInt64?)throws  {
+    let pointer =
+        try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_constructor_lightningsession_new(
+        FfiConverterTypeNetwork.lower(network),
+        FfiConverterTypeElectrumClient.lower(client),
+        FfiConverterOptionUInt64.lower(timeout),$0
+    )
+}
+    self.init(unsafeFromRawPointer: pointer)
+}
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_lightningsession(pointer, $0) }
+    }
+
+    
+
+    
+    /**
+     * Create a new invoice for a given amount and a claim address to receive the payment
+     */
+open func invoice(amount: UInt64, description: String?, claimAddress: Address)throws  -> InvoiceResponse {
+    return try  FfiConverterTypeInvoiceResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lightningsession_invoice(self.uniffiClonePointer(),
+        FfiConverterUInt64.lower(amount),
+        FfiConverterOptionString.lower(description),
+        FfiConverterTypeAddress.lower(claimAddress),$0
+    )
+})
+}
+    
+    /**
+     * Prepare to pay a bolt11 invoice
+     */
+open func preparePay(invoice: String, refundAddress: Address)throws  -> PreparePayResponse {
+    return try  FfiConverterTypePreparePayResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lightningsession_prepare_pay(self.uniffiClonePointer(),
+        FfiConverterString.lower(invoice),
+        FfiConverterTypeAddress.lower(refundAddress),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLightningSession: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = LightningSession
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> LightningSession {
+        return LightningSession(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: LightningSession) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LightningSession {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: LightningSession, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLightningSession_lift(_ pointer: UnsafeMutableRawPointer) throws -> LightningSession {
+    return try FfiConverterTypeLightningSession.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLightningSession_lower(_ value: LightningSession) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeLightningSession.lower(value)
 }
 
 
@@ -4979,6 +5279,135 @@ public func FfiConverterTypePrecision_lift(_ pointer: UnsafeMutableRawPointer) t
 #endif
 public func FfiConverterTypePrecision_lower(_ value: Precision) -> UnsafeMutableRawPointer {
     return FfiConverterTypePrecision.lower(value)
+}
+
+
+
+
+public protocol PreparePayResponseProtocol : AnyObject {
+    
+    func completePay() throws  -> Bool
+    
+    func uri() throws  -> String
+    
+}
+
+open class PreparePayResponse:
+    PreparePayResponseProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_preparepayresponse(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_preparepayresponse(pointer, $0) }
+    }
+
+    
+
+    
+open func completePay()throws  -> Bool {
+    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_preparepayresponse_complete_pay(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func uri()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_preparepayresponse_uri(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePreparePayResponse: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = PreparePayResponse
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> PreparePayResponse {
+        return PreparePayResponse(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: PreparePayResponse) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PreparePayResponse {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: PreparePayResponse, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePreparePayResponse_lift(_ pointer: UnsafeMutableRawPointer) throws -> PreparePayResponse {
+    return try FfiConverterTypePreparePayResponse.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePreparePayResponse_lower(_ value: PreparePayResponse) -> UnsafeMutableRawPointer {
+    return FfiConverterTypePreparePayResponse.lower(value)
 }
 
 
@@ -11130,6 +11559,12 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_foreignpersister_push() != 2778) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_lwk_checksum_method_invoiceresponse_bolt11_invoice() != 30510) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_invoiceresponse_complete_pay() != 2434) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_lwk_checksum_method_issuance_asset() != 3815) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -11158,6 +11593,12 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_issuance_token_satoshi() != 60126) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lightningsession_invoice() != 14524) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lightningsession_prepare_pay() != 40916) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_lwktestenv_electrum_url() != 44900) {
@@ -11203,6 +11644,12 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_precision_string_to_sats() != 26556) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_preparepayresponse_complete_pay() != 40255) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_preparepayresponse_uri() != 64009) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_pset_combine() != 53457) {
@@ -11608,6 +12055,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_constructor_foreignpersisterlink_new() != 48168) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_constructor_lightningsession_new() != 37086) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_constructor_lwktestenv_new() != 2775) {
