@@ -2619,14 +2619,14 @@ public protocol Bolt11InvoiceProtocol : AnyObject {
     func amountMilliSatoshis()  -> UInt64?
     
     /**
-     * Returns the invoice description as a string
-     */
-    func description()  -> String
-    
-    /**
      * Returns the expiry time in seconds (default is 3600 seconds / 1 hour if not specified)
      */
     func expiryTime()  -> UInt64
+    
+    /**
+     * Returns the invoice description as a string
+     */
+    func invoiceDescription()  -> String
     
     /**
      * Returns the minimum CLTV expiry delta
@@ -2736,21 +2736,21 @@ open func amountMilliSatoshis() -> UInt64? {
 }
     
     /**
-     * Returns the invoice description as a string
-     */
-open func description() -> String {
-    return try!  FfiConverterString.lift(try! rustCall() {
-    uniffi_lwk_fn_method_bolt11invoice_description(self.uniffiClonePointer(),$0
-    )
-})
-}
-    
-    /**
      * Returns the expiry time in seconds (default is 3600 seconds / 1 hour if not specified)
      */
 open func expiryTime() -> UInt64 {
     return try!  FfiConverterUInt64.lift(try! rustCall() {
     uniffi_lwk_fn_method_bolt11invoice_expiry_time(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the invoice description as a string
+     */
+open func invoiceDescription() -> String {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bolt11invoice_invoice_description(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -12563,10 +12563,10 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_bolt11invoice_amount_milli_satoshis() != 5904) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lwk_checksum_method_bolt11invoice_description() != 48074) {
+    if (uniffi_lwk_checksum_method_bolt11invoice_expiry_time() != 5862) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lwk_checksum_method_bolt11invoice_expiry_time() != 5862) {
+    if (uniffi_lwk_checksum_method_bolt11invoice_invoice_description() != 18758) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_bolt11invoice_min_final_cltv_expiry_delta() != 6149) {
