@@ -4477,14 +4477,19 @@ public func FfiConverterTypeIssuance_lower(_ value: Issuance) -> UnsafeMutableRa
 public protocol LightningSessionProtocol : AnyObject {
     
     /**
+     * Use the boltz
+     */
+    func fetchReverseSwaps(claimAddress: Address) throws  -> [String]
+    
+    /**
      * Create a new invoice for a given amount and a claim address to receive the payment
      */
-    func invoice(amount: UInt64, description: String?, claimAddress: Address) throws  -> InvoiceResponse
+    func invoice(amount: UInt64, description: String?, claimAddress: Address, webhook: WebHook?) throws  -> InvoiceResponse
     
     /**
      * Prepare to pay a bolt11 invoice
      */
-    func preparePay(invoice: Bolt11Invoice, refundAddress: Address) throws  -> PreparePayResponse
+    func preparePay(invoice: Bolt11Invoice, refundAddress: Address, webhook: WebHook?) throws  -> PreparePayResponse
     
     /**
      * Generate a rescue file with lightning session mnemonic.
@@ -4581,14 +4586,26 @@ public convenience init(network: Network, client: ElectrumClient, timeout: UInt6
 
     
     /**
+     * Use the boltz
+     */
+open func fetchReverseSwaps(claimAddress: Address)throws  -> [String] {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lightningsession_fetch_reverse_swaps(self.uniffiClonePointer(),
+        FfiConverterTypeAddress.lower(claimAddress),$0
+    )
+})
+}
+    
+    /**
      * Create a new invoice for a given amount and a claim address to receive the payment
      */
-open func invoice(amount: UInt64, description: String?, claimAddress: Address)throws  -> InvoiceResponse {
+open func invoice(amount: UInt64, description: String?, claimAddress: Address, webhook: WebHook?)throws  -> InvoiceResponse {
     return try  FfiConverterTypeInvoiceResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
     uniffi_lwk_fn_method_lightningsession_invoice(self.uniffiClonePointer(),
         FfiConverterUInt64.lower(amount),
         FfiConverterOptionString.lower(description),
-        FfiConverterTypeAddress.lower(claimAddress),$0
+        FfiConverterTypeAddress.lower(claimAddress),
+        FfiConverterOptionTypeWebHook.lower(webhook),$0
     )
 })
 }
@@ -4596,11 +4613,12 @@ open func invoice(amount: UInt64, description: String?, claimAddress: Address)th
     /**
      * Prepare to pay a bolt11 invoice
      */
-open func preparePay(invoice: Bolt11Invoice, refundAddress: Address)throws  -> PreparePayResponse {
+open func preparePay(invoice: Bolt11Invoice, refundAddress: Address, webhook: WebHook?)throws  -> PreparePayResponse {
     return try  FfiConverterTypePreparePayResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
     uniffi_lwk_fn_method_lightningsession_prepare_pay(self.uniffiClonePointer(),
         FfiConverterTypeBolt11Invoice.lower(invoice),
-        FfiConverterTypeAddress.lower(refundAddress),$0
+        FfiConverterTypeAddress.lower(refundAddress),
+        FfiConverterOptionTypeWebHook.lower(webhook),$0
     )
 })
 }
@@ -6537,6 +6555,16 @@ public protocol PsetDetailsProtocol : AnyObject {
     func balance()  -> PsetBalance
     
     /**
+     * Set of fingerprints for which the PSET has a signature
+     */
+    func fingerprintsHas()  -> [String]
+    
+    /**
+     * Set of fingerprints for which the PSET is missing a signature
+     */
+    func fingerprintsMissing()  -> [String]
+    
+    /**
      * Return an element for every input that could possibly be a issuance or a reissuance
      */
     func inputsIssuances()  -> [Issuance]
@@ -6612,6 +6640,26 @@ open class PsetDetails:
 open func balance() -> PsetBalance {
     return try!  FfiConverterTypePsetBalance.lift(try! rustCall() {
     uniffi_lwk_fn_method_psetdetails_balance(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Set of fingerprints for which the PSET has a signature
+     */
+open func fingerprintsHas() -> [String] {
+    return try!  FfiConverterSequenceString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_psetdetails_fingerprints_has(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Set of fingerprints for which the PSET is missing a signature
+     */
+open func fingerprintsMissing() -> [String] {
+    return try!  FfiConverterSequenceString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_psetdetails_fingerprints_missing(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -7603,6 +7651,11 @@ public protocol SignerProtocol : AnyObject {
     func deriveBip85Mnemonic(index: UInt32, wordCount: UInt32) throws  -> Mnemonic
     
     /**
+     * Return the signer fingerprint
+     */
+    func fingerprint() throws  -> String
+    
+    /**
      * Return keyorigin and xpub, like "[73c5da0a/84h/1h/0h]tpub..."
      */
     func keyoriginXpub(bip: Bip) throws  -> String
@@ -7762,6 +7815,16 @@ open func deriveBip85Mnemonic(index: UInt32, wordCount: UInt32)throws  -> Mnemon
     uniffi_lwk_fn_method_signer_derive_bip85_mnemonic(self.uniffiClonePointer(),
         FfiConverterUInt32.lower(index),
         FfiConverterUInt32.lower(wordCount),$0
+    )
+})
+}
+    
+    /**
+     * Return the signer fingerprint
+     */
+open func fingerprint()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_signer_fingerprint(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -10315,6 +10378,125 @@ public func FfiConverterTypeWalletTxOut_lower(_ value: WalletTxOut) -> UnsafeMut
 
 
 
+public protocol WebHookProtocol : AnyObject {
+    
+}
+
+open class WebHook:
+    WebHookProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_webhook(self.pointer, $0) }
+    }
+public convenience init(url: String) {
+    let pointer =
+        try! rustCall() {
+    uniffi_lwk_fn_constructor_webhook_new(
+        FfiConverterString.lower(url),$0
+    )
+}
+    self.init(unsafeFromRawPointer: pointer)
+}
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_webhook(pointer, $0) }
+    }
+
+    
+
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeWebHook: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = WebHook
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> WebHook {
+        return WebHook(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: WebHook) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> WebHook {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: WebHook, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeWebHook_lift(_ pointer: UnsafeMutableRawPointer) throws -> WebHook {
+    return try FfiConverterTypeWebHook.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeWebHook_lower(_ value: WebHook) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeWebHook.lower(value)
+}
+
+
+
+
 /**
  * A Watch-Only wallet, wrapper over [`lwk_wollet::Wollet`]
  */
@@ -11333,6 +11515,8 @@ public enum LwkError {
     )
     case MagicRoutingHint(address: String, amount: UInt64, uri: String
     )
+    case SwapExpired(swapId: String, status: String
+    )
 }
 
 
@@ -11359,6 +11543,10 @@ public struct FfiConverterTypeLwkError: FfiConverterRustBuffer {
             address: try FfiConverterString.read(from: &buf), 
             amount: try FfiConverterUInt64.read(from: &buf), 
             uri: try FfiConverterString.read(from: &buf)
+            )
+        case 4: return .SwapExpired(
+            swapId: try FfiConverterString.read(from: &buf), 
+            status: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
@@ -11387,6 +11575,12 @@ public struct FfiConverterTypeLwkError: FfiConverterRustBuffer {
             FfiConverterString.write(address, into: &buf)
             FfiConverterUInt64.write(amount, into: &buf)
             FfiConverterString.write(uri, into: &buf)
+            
+        
+        case let .SwapExpired(swapId,status):
+            writeInt(&buf, Int32(4))
+            FfiConverterString.write(swapId, into: &buf)
+            FfiConverterString.write(status, into: &buf)
             
         }
     }
@@ -11915,6 +12109,30 @@ fileprivate struct FfiConverterOptionTypeWalletTxOut: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeWalletTxOut.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeWebHook: FfiConverterRustBuffer {
+    typealias SwiftType = WebHook?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeWebHook.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeWebHook.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -12668,10 +12886,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_issuance_token_satoshi() != 60126) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lwk_checksum_method_lightningsession_invoice() != 14524) {
+    if (uniffi_lwk_checksum_method_lightningsession_fetch_reverse_swaps() != 5482) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lwk_checksum_method_lightningsession_prepare_pay() != 56340) {
+    if (uniffi_lwk_checksum_method_lightningsession_invoice() != 7616) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lightningsession_prepare_pay() != 30086) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_lightningsession_rescue_file() != 48466) {
@@ -12782,6 +13003,12 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_psetdetails_balance() != 59666) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_lwk_checksum_method_psetdetails_fingerprints_has() != 6688) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_psetdetails_fingerprints_missing() != 9065) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_lwk_checksum_method_psetdetails_inputs_issuances() != 33153) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -12855,6 +13082,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_signer_derive_bip85_mnemonic() != 32162) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_signer_fingerprint() != 51686) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_signer_keyorigin_xpub() != 48213) {
@@ -13239,6 +13469,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_constructor_update_new() != 5357) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_constructor_webhook_new() != 1028) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_constructor_wollet_new() != 15308) {
