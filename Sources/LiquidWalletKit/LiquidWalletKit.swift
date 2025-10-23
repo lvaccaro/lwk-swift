@@ -4477,9 +4477,11 @@ public func FfiConverterTypeIssuance_lower(_ value: Issuance) -> UnsafeMutableRa
 public protocol LightningSessionProtocol : AnyObject {
     
     /**
-     * Use the boltz
+     * Returns a the list of all the swaps ever done with the session mnemonic.
+     *
+     * The object returned can be converted to a json String with toString()
      */
-    func fetchReverseSwaps(claimAddress: Address) throws  -> [String]
+    func fetchSwaps() throws  -> SwapList
     
     /**
      * Create a new invoice for a given amount and a claim address to receive the payment
@@ -4498,6 +4500,16 @@ public protocol LightningSessionProtocol : AnyObject {
      * It can be used on the Boltz web app to bring non terminated swaps to completition.
      */
     func rescueFile() throws  -> String
+    
+    /**
+     * Filter the swap list to only include restorable reverse swaps
+     */
+    func restorableReverseSwaps(swapList: SwapList, claimAddress: Address) throws  -> [String]
+    
+    /**
+     * Filter the swap list to only include restorable submarine swaps
+     */
+    func restorableSubmarineSwaps(swapList: SwapList, refundAddress: Address) throws  -> [String]
     
     /**
      * Restore an invoice flow from its serialized data see `InvoiceResponse::serialize`
@@ -4586,12 +4598,13 @@ public convenience init(network: Network, client: ElectrumClient, timeout: UInt6
 
     
     /**
-     * Use the boltz
+     * Returns a the list of all the swaps ever done with the session mnemonic.
+     *
+     * The object returned can be converted to a json String with toString()
      */
-open func fetchReverseSwaps(claimAddress: Address)throws  -> [String] {
-    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_fetch_reverse_swaps(self.uniffiClonePointer(),
-        FfiConverterTypeAddress.lower(claimAddress),$0
+open func fetchSwaps()throws  -> SwapList {
+    return try  FfiConverterTypeSwapList.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lightningsession_fetch_swaps(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -4632,6 +4645,30 @@ open func preparePay(invoice: Bolt11Invoice, refundAddress: Address, webhook: We
 open func rescueFile()throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
     uniffi_lwk_fn_method_lightningsession_rescue_file(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Filter the swap list to only include restorable reverse swaps
+     */
+open func restorableReverseSwaps(swapList: SwapList, claimAddress: Address)throws  -> [String] {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lightningsession_restorable_reverse_swaps(self.uniffiClonePointer(),
+        FfiConverterTypeSwapList.lower(swapList),
+        FfiConverterTypeAddress.lower(claimAddress),$0
+    )
+})
+}
+    
+    /**
+     * Filter the swap list to only include restorable submarine swaps
+     */
+open func restorableSubmarineSwaps(swapList: SwapList, refundAddress: Address)throws  -> [String] {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lightningsession_restorable_submarine_swaps(self.uniffiClonePointer(),
+        FfiConverterTypeSwapList.lower(swapList),
+        FfiConverterTypeAddress.lower(refundAddress),$0
     )
 })
 }
@@ -7938,6 +7975,126 @@ public func FfiConverterTypeSigner_lift(_ pointer: UnsafeMutableRawPointer) thro
 #endif
 public func FfiConverterTypeSigner_lower(_ value: Signer) -> UnsafeMutableRawPointer {
     return FfiConverterTypeSigner.lower(value)
+}
+
+
+
+
+public protocol SwapListProtocol : AnyObject {
+    
+}
+
+open class SwapList:
+    CustomStringConvertible,
+    SwapListProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_swaplist(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_swaplist(pointer, $0) }
+    }
+
+    
+
+    
+    open var description: String {
+        return try!  FfiConverterString.lift(
+            try! rustCall() {
+    uniffi_lwk_fn_method_swaplist_uniffi_trait_display(self.uniffiClonePointer(),$0
+    )
+}
+        )
+    }
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSwapList: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = SwapList
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> SwapList {
+        return SwapList(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: SwapList) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwapList {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: SwapList, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSwapList_lift(_ pointer: UnsafeMutableRawPointer) throws -> SwapList {
+    return try FfiConverterTypeSwapList.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSwapList_lower(_ value: SwapList) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeSwapList.lower(value)
 }
 
 
@@ -12886,7 +13043,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_issuance_token_satoshi() != 60126) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lwk_checksum_method_lightningsession_fetch_reverse_swaps() != 5482) {
+    if (uniffi_lwk_checksum_method_lightningsession_fetch_swaps() != 36680) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_lightningsession_invoice() != 7616) {
@@ -12896,6 +13053,12 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_lightningsession_rescue_file() != 48466) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lightningsession_restorable_reverse_swaps() != 49023) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lightningsession_restorable_submarine_swaps() != 38548) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_lightningsession_restore_invoice() != 7598) {
