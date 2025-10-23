@@ -4484,6 +4484,11 @@ public protocol LightningSessionProtocol : AnyObject {
     func fetchSwaps() throws  -> SwapList
     
     /**
+     * Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
+     */
+    func fetchSwapsInfo() throws  -> String
+    
+    /**
      * Create a new invoice for a given amount and a claim address to receive the payment
      */
     func invoice(amount: UInt64, description: String?, claimAddress: Address, webhook: WebHook?) throws  -> InvoiceResponse
@@ -4605,6 +4610,16 @@ public convenience init(network: Network, client: ElectrumClient, timeout: UInt6
 open func fetchSwaps()throws  -> SwapList {
     return try  FfiConverterTypeSwapList.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
     uniffi_lwk_fn_method_lightningsession_fetch_swaps(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
+     */
+open func fetchSwapsInfo()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lightningsession_fetch_swaps_info(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -13044,6 +13059,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_lightningsession_fetch_swaps() != 36680) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lightningsession_fetch_swaps_info() != 5709) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_lightningsession_invoice() != 7616) {
