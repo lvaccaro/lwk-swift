@@ -3008,6 +3008,311 @@ public func FfiConverterTypeBolt11Invoice_lower(_ value: Bolt11Invoice) -> Unsaf
 
 
 /**
+ * A session to pay and receive lightning payments.
+ *
+ * Lightning payments are done via LBTC swaps using Boltz.
+ */
+public protocol BoltzSessionProtocol : AnyObject {
+    
+    /**
+     * Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
+     */
+    func fetchSwapsInfo() throws  -> String
+    
+    /**
+     * Create a new invoice for a given amount and a claim address to receive the payment
+     */
+    func invoice(amount: UInt64, description: String?, claimAddress: Address, webhook: WebHook?) throws  -> InvoiceResponse
+    
+    /**
+     * Prepare to pay a bolt11 invoice
+     */
+    func preparePay(lightningPayment: LightningPayment, refundAddress: Address, webhook: WebHook?) throws  -> PreparePayResponse
+    
+    /**
+     * Generate a rescue file with lightning session mnemonic.
+     *
+     * The rescue file is a JSON file that contains the swaps mnemonic.
+     * It can be used on the Boltz web app to bring non terminated swaps to completition.
+     */
+    func rescueFile() throws  -> String
+    
+    /**
+     * Filter the swap list to only include restorable reverse swaps
+     */
+    func restorableReverseSwaps(swapList: SwapList, claimAddress: Address) throws  -> [String]
+    
+    /**
+     * Filter the swap list to only include restorable submarine swaps
+     */
+    func restorableSubmarineSwaps(swapList: SwapList, refundAddress: Address) throws  -> [String]
+    
+    /**
+     * Restore an invoice flow from its serialized data see `InvoiceResponse::serialize`
+     */
+    func restoreInvoice(data: String) throws  -> InvoiceResponse
+    
+    /**
+     * Restore a payment from its serialized data see `PreparePayResponse::serialize`
+     */
+    func restorePreparePay(data: String) throws  -> PreparePayResponse
+    
+    /**
+     * Returns a the list of all the swaps ever done with the session mnemonic.
+     *
+     * The object returned can be converted to a json String with toString()
+     */
+    func swapRestore() throws  -> SwapList
+    
+}
+
+/**
+ * A session to pay and receive lightning payments.
+ *
+ * Lightning payments are done via LBTC swaps using Boltz.
+ */
+open class BoltzSession:
+    BoltzSessionProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_boltzsession(self.pointer, $0) }
+    }
+    /**
+     * Create the lightning session with default settings
+     *
+     * This uses default timeout and generates a random mnemonic.
+     * For custom configuration, use [`BoltzSession::from_builder()`] instead.
+     */
+public convenience init(network: Network, client: AnyClient)throws  {
+    let pointer =
+        try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_constructor_boltzsession_new(
+        FfiConverterTypeNetwork.lower(network),
+        FfiConverterTypeAnyClient.lower(client),$0
+    )
+}
+    self.init(unsafeFromRawPointer: pointer)
+}
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_boltzsession(pointer, $0) }
+    }
+
+    
+    /**
+     * Create the lightning session from a builder
+     */
+public static func fromBuilder(builder: BoltzSessionBuilder)throws  -> BoltzSession {
+    return try  FfiConverterTypeBoltzSession.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_constructor_boltzsession_from_builder(
+        FfiConverterTypeBoltzSessionBuilder.lower(builder),$0
+    )
+})
+}
+    
+
+    
+    /**
+     * Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
+     */
+open func fetchSwapsInfo()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_fetch_swaps_info(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Create a new invoice for a given amount and a claim address to receive the payment
+     */
+open func invoice(amount: UInt64, description: String?, claimAddress: Address, webhook: WebHook?)throws  -> InvoiceResponse {
+    return try  FfiConverterTypeInvoiceResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_invoice(self.uniffiClonePointer(),
+        FfiConverterUInt64.lower(amount),
+        FfiConverterOptionString.lower(description),
+        FfiConverterTypeAddress.lower(claimAddress),
+        FfiConverterOptionTypeWebHook.lower(webhook),$0
+    )
+})
+}
+    
+    /**
+     * Prepare to pay a bolt11 invoice
+     */
+open func preparePay(lightningPayment: LightningPayment, refundAddress: Address, webhook: WebHook?)throws  -> PreparePayResponse {
+    return try  FfiConverterTypePreparePayResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_prepare_pay(self.uniffiClonePointer(),
+        FfiConverterTypeLightningPayment.lower(lightningPayment),
+        FfiConverterTypeAddress.lower(refundAddress),
+        FfiConverterOptionTypeWebHook.lower(webhook),$0
+    )
+})
+}
+    
+    /**
+     * Generate a rescue file with lightning session mnemonic.
+     *
+     * The rescue file is a JSON file that contains the swaps mnemonic.
+     * It can be used on the Boltz web app to bring non terminated swaps to completition.
+     */
+open func rescueFile()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_rescue_file(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Filter the swap list to only include restorable reverse swaps
+     */
+open func restorableReverseSwaps(swapList: SwapList, claimAddress: Address)throws  -> [String] {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_restorable_reverse_swaps(self.uniffiClonePointer(),
+        FfiConverterTypeSwapList.lower(swapList),
+        FfiConverterTypeAddress.lower(claimAddress),$0
+    )
+})
+}
+    
+    /**
+     * Filter the swap list to only include restorable submarine swaps
+     */
+open func restorableSubmarineSwaps(swapList: SwapList, refundAddress: Address)throws  -> [String] {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_restorable_submarine_swaps(self.uniffiClonePointer(),
+        FfiConverterTypeSwapList.lower(swapList),
+        FfiConverterTypeAddress.lower(refundAddress),$0
+    )
+})
+}
+    
+    /**
+     * Restore an invoice flow from its serialized data see `InvoiceResponse::serialize`
+     */
+open func restoreInvoice(data: String)throws  -> InvoiceResponse {
+    return try  FfiConverterTypeInvoiceResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_restore_invoice(self.uniffiClonePointer(),
+        FfiConverterString.lower(data),$0
+    )
+})
+}
+    
+    /**
+     * Restore a payment from its serialized data see `PreparePayResponse::serialize`
+     */
+open func restorePreparePay(data: String)throws  -> PreparePayResponse {
+    return try  FfiConverterTypePreparePayResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_restore_prepare_pay(self.uniffiClonePointer(),
+        FfiConverterString.lower(data),$0
+    )
+})
+}
+    
+    /**
+     * Returns a the list of all the swaps ever done with the session mnemonic.
+     *
+     * The object returned can be converted to a json String with toString()
+     */
+open func swapRestore()throws  -> SwapList {
+    return try  FfiConverterTypeSwapList.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_swap_restore(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBoltzSession: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = BoltzSession
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> BoltzSession {
+        return BoltzSession(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: BoltzSession) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BoltzSession {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: BoltzSession, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoltzSession_lift(_ pointer: UnsafeMutableRawPointer) throws -> BoltzSession {
+    return try FfiConverterTypeBoltzSession.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoltzSession_lower(_ value: BoltzSession) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeBoltzSession.lower(value)
+}
+
+
+
+
+/**
  * Wrapper over [`lwk_wollet::Contract`]
  */
 public protocol ContractProtocol : AnyObject {
@@ -4745,304 +5050,6 @@ public func FfiConverterTypeLightningPayment_lift(_ pointer: UnsafeMutableRawPoi
 #endif
 public func FfiConverterTypeLightningPayment_lower(_ value: LightningPayment) -> UnsafeMutableRawPointer {
     return FfiConverterTypeLightningPayment.lower(value)
-}
-
-
-
-
-/**
- * A session to pay and receive lightning payments.
- *
- * Lightning payments are done via LBTC swaps using Boltz.
- */
-public protocol LightningSessionProtocol : AnyObject {
-    
-    /**
-     * Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
-     */
-    func fetchSwapsInfo() throws  -> String
-    
-    /**
-     * Create a new invoice for a given amount and a claim address to receive the payment
-     */
-    func invoice(amount: UInt64, description: String?, claimAddress: Address, webhook: WebHook?) throws  -> InvoiceResponse
-    
-    /**
-     * Prepare to pay a bolt11 invoice
-     */
-    func preparePay(lightningPayment: LightningPayment, refundAddress: Address, webhook: WebHook?) throws  -> PreparePayResponse
-    
-    /**
-     * Generate a rescue file with lightning session mnemonic.
-     *
-     * The rescue file is a JSON file that contains the swaps mnemonic.
-     * It can be used on the Boltz web app to bring non terminated swaps to completition.
-     */
-    func rescueFile() throws  -> String
-    
-    /**
-     * Filter the swap list to only include restorable reverse swaps
-     */
-    func restorableReverseSwaps(swapList: SwapList, claimAddress: Address) throws  -> [String]
-    
-    /**
-     * Filter the swap list to only include restorable submarine swaps
-     */
-    func restorableSubmarineSwaps(swapList: SwapList, refundAddress: Address) throws  -> [String]
-    
-    /**
-     * Restore an invoice flow from its serialized data see `InvoiceResponse::serialize`
-     */
-    func restoreInvoice(data: String) throws  -> InvoiceResponse
-    
-    /**
-     * Restore a payment from its serialized data see `PreparePayResponse::serialize`
-     */
-    func restorePreparePay(data: String) throws  -> PreparePayResponse
-    
-    /**
-     * Returns a the list of all the swaps ever done with the session mnemonic.
-     *
-     * The object returned can be converted to a json String with toString()
-     */
-    func swapRestore() throws  -> SwapList
-    
-}
-
-/**
- * A session to pay and receive lightning payments.
- *
- * Lightning payments are done via LBTC swaps using Boltz.
- */
-open class LightningSession:
-    LightningSessionProtocol {
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    public init(noPointer: NoPointer) {
-        self.pointer = nil
-    }
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_lightningsession(self.pointer, $0) }
-    }
-    /**
-     * Create the lightning session
-     *
-     * If a `logging` implementation is provided, it will be set as the global logger
-     * to receive log messages from the lightning operations. Note that the global
-     * logger can only be set once - if a logger is already set, the new one will be ignored.
-     */
-public convenience init(network: Network, client: AnyClient, timeout: UInt64?, logging: Logging?, mnemonic: Mnemonic?)throws  {
-    let pointer =
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_constructor_lightningsession_new(
-        FfiConverterTypeNetwork.lower(network),
-        FfiConverterTypeAnyClient.lower(client),
-        FfiConverterOptionUInt64.lower(timeout),
-        FfiConverterOptionTypeLogging.lower(logging),
-        FfiConverterOptionTypeMnemonic.lower(mnemonic),$0
-    )
-}
-    self.init(unsafeFromRawPointer: pointer)
-}
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_lightningsession(pointer, $0) }
-    }
-
-    
-
-    
-    /**
-     * Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
-     */
-open func fetchSwapsInfo()throws  -> String {
-    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_fetch_swaps_info(self.uniffiClonePointer(),$0
-    )
-})
-}
-    
-    /**
-     * Create a new invoice for a given amount and a claim address to receive the payment
-     */
-open func invoice(amount: UInt64, description: String?, claimAddress: Address, webhook: WebHook?)throws  -> InvoiceResponse {
-    return try  FfiConverterTypeInvoiceResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_invoice(self.uniffiClonePointer(),
-        FfiConverterUInt64.lower(amount),
-        FfiConverterOptionString.lower(description),
-        FfiConverterTypeAddress.lower(claimAddress),
-        FfiConverterOptionTypeWebHook.lower(webhook),$0
-    )
-})
-}
-    
-    /**
-     * Prepare to pay a bolt11 invoice
-     */
-open func preparePay(lightningPayment: LightningPayment, refundAddress: Address, webhook: WebHook?)throws  -> PreparePayResponse {
-    return try  FfiConverterTypePreparePayResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_prepare_pay(self.uniffiClonePointer(),
-        FfiConverterTypeLightningPayment.lower(lightningPayment),
-        FfiConverterTypeAddress.lower(refundAddress),
-        FfiConverterOptionTypeWebHook.lower(webhook),$0
-    )
-})
-}
-    
-    /**
-     * Generate a rescue file with lightning session mnemonic.
-     *
-     * The rescue file is a JSON file that contains the swaps mnemonic.
-     * It can be used on the Boltz web app to bring non terminated swaps to completition.
-     */
-open func rescueFile()throws  -> String {
-    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_rescue_file(self.uniffiClonePointer(),$0
-    )
-})
-}
-    
-    /**
-     * Filter the swap list to only include restorable reverse swaps
-     */
-open func restorableReverseSwaps(swapList: SwapList, claimAddress: Address)throws  -> [String] {
-    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_restorable_reverse_swaps(self.uniffiClonePointer(),
-        FfiConverterTypeSwapList.lower(swapList),
-        FfiConverterTypeAddress.lower(claimAddress),$0
-    )
-})
-}
-    
-    /**
-     * Filter the swap list to only include restorable submarine swaps
-     */
-open func restorableSubmarineSwaps(swapList: SwapList, refundAddress: Address)throws  -> [String] {
-    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_restorable_submarine_swaps(self.uniffiClonePointer(),
-        FfiConverterTypeSwapList.lower(swapList),
-        FfiConverterTypeAddress.lower(refundAddress),$0
-    )
-})
-}
-    
-    /**
-     * Restore an invoice flow from its serialized data see `InvoiceResponse::serialize`
-     */
-open func restoreInvoice(data: String)throws  -> InvoiceResponse {
-    return try  FfiConverterTypeInvoiceResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_restore_invoice(self.uniffiClonePointer(),
-        FfiConverterString.lower(data),$0
-    )
-})
-}
-    
-    /**
-     * Restore a payment from its serialized data see `PreparePayResponse::serialize`
-     */
-open func restorePreparePay(data: String)throws  -> PreparePayResponse {
-    return try  FfiConverterTypePreparePayResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_restore_prepare_pay(self.uniffiClonePointer(),
-        FfiConverterString.lower(data),$0
-    )
-})
-}
-    
-    /**
-     * Returns a the list of all the swaps ever done with the session mnemonic.
-     *
-     * The object returned can be converted to a json String with toString()
-     */
-open func swapRestore()throws  -> SwapList {
-    return try  FfiConverterTypeSwapList.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_lightningsession_swap_restore(self.uniffiClonePointer(),$0
-    )
-})
-}
-    
-
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeLightningSession: FfiConverter {
-
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = LightningSession
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> LightningSession {
-        return LightningSession(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: LightningSession) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LightningSession {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if (ptr == nil) {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: LightningSession, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLightningSession_lift(_ pointer: UnsafeMutableRawPointer) throws -> LightningSession {
-    return try FfiConverterTypeLightningSession.lift(pointer)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLightningSession_lower(_ value: LightningSession) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeLightningSession.lower(value)
 }
 
 
@@ -8407,6 +8414,11 @@ public protocol TransactionProtocol : AnyObject {
     func bytes()  -> Data
     
     /**
+     * Returns the "discount virtual size" of this transaction.
+     */
+    func discountVsize()  -> UInt32
+    
+    /**
      * Return the fee of the transaction in the given asset.
      * At the moment the only asset that can be used as fee is the policy asset (LBTC for mainnet).
      */
@@ -8501,6 +8513,16 @@ public convenience init(hex: Hex)throws  {
 open func bytes() -> Data {
     return try!  FfiConverterData.lift(try! rustCall() {
     uniffi_lwk_fn_method_transaction_bytes(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the "discount virtual size" of this transaction.
+     */
+open func discountVsize() -> UInt32 {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+    uniffi_lwk_fn_method_transaction_discount_vsize(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -11651,6 +11673,77 @@ public func FfiConverterTypeWolletDescriptor_lower(_ value: WolletDescriptor) ->
 
 
 /**
+ * A builder for the `BoltzSession`
+ */
+public struct BoltzSessionBuilder {
+    public var network: Network
+    public var client: AnyClient
+    public var timeout: UInt64?
+    public var mnemonic: Mnemonic?
+    public var logging: Logging?
+    public var polling: Bool
+    public var timeoutAdvance: UInt64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(network: Network, client: AnyClient, timeout: UInt64? = nil, mnemonic: Mnemonic? = nil, logging: Logging? = nil, polling: Bool = false, timeoutAdvance: UInt64? = nil) {
+        self.network = network
+        self.client = client
+        self.timeout = timeout
+        self.mnemonic = mnemonic
+        self.logging = logging
+        self.polling = polling
+        self.timeoutAdvance = timeoutAdvance
+    }
+}
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBoltzSessionBuilder: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BoltzSessionBuilder {
+        return
+            try BoltzSessionBuilder(
+                network: FfiConverterTypeNetwork.read(from: &buf), 
+                client: FfiConverterTypeAnyClient.read(from: &buf), 
+                timeout: FfiConverterOptionUInt64.read(from: &buf), 
+                mnemonic: FfiConverterOptionTypeMnemonic.read(from: &buf), 
+                logging: FfiConverterOptionTypeLogging.read(from: &buf), 
+                polling: FfiConverterBool.read(from: &buf), 
+                timeoutAdvance: FfiConverterOptionUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: BoltzSessionBuilder, into buf: inout [UInt8]) {
+        FfiConverterTypeNetwork.write(value.network, into: &buf)
+        FfiConverterTypeAnyClient.write(value.client, into: &buf)
+        FfiConverterOptionUInt64.write(value.timeout, into: &buf)
+        FfiConverterOptionTypeMnemonic.write(value.mnemonic, into: &buf)
+        FfiConverterOptionTypeLogging.write(value.logging, into: &buf)
+        FfiConverterBool.write(value.polling, into: &buf)
+        FfiConverterOptionUInt64.write(value.timeoutAdvance, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoltzSessionBuilder_lift(_ buf: RustBuffer) throws -> BoltzSessionBuilder {
+    return try FfiConverterTypeBoltzSessionBuilder.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoltzSessionBuilder_lower(_ value: BoltzSessionBuilder) -> RustBuffer {
+    return FfiConverterTypeBoltzSessionBuilder.lower(value)
+}
+
+
+/**
  * A builder for the `EsploraClient`
  */
 public struct EsploraClientBuilder {
@@ -11970,6 +12063,8 @@ public enum LwkError {
     )
     case SwapExpired(swapId: String, status: String
     )
+    case NoBoltzUpdate
+    case ObjectConsumed
 }
 
 
@@ -12001,6 +12096,8 @@ public struct FfiConverterTypeLwkError: FfiConverterRustBuffer {
             swapId: try FfiConverterString.read(from: &buf), 
             status: try FfiConverterString.read(from: &buf)
             )
+        case 5: return .NoBoltzUpdate
+        case 6: return .ObjectConsumed
 
          default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -12035,6 +12132,14 @@ public struct FfiConverterTypeLwkError: FfiConverterRustBuffer {
             FfiConverterString.write(swapId, into: &buf)
             FfiConverterString.write(status, into: &buf)
             
+        
+        case .NoBoltzUpdate:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .ObjectConsumed:
+            writeInt(&buf, Int32(6))
+        
         }
     }
 }
@@ -13130,6 +13235,28 @@ public func FfiConverterTypeHex_lower(_ value: Hex) -> RustBuffer {
 }
 
 /**
+ * Derive asset id from contract and transaction input
+ */
+public func deriveAssetId(txin: TxIn, contract: Contract)throws  -> AssetId {
+    return try  FfiConverterTypeAssetId.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_func_derive_asset_id(
+        FfiConverterTypeTxIn.lower(txin),
+        FfiConverterTypeContract.lower(contract),$0
+    )
+})
+}
+/**
+ * Derive token id from contract and transaction input
+ */
+public func deriveTokenId(txin: TxIn, contract: Contract)throws  -> AssetId {
+    return try  FfiConverterTypeAssetId.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_func_derive_token_id(
+        FfiConverterTypeTxIn.lower(txin),
+        FfiConverterTypeContract.lower(contract),$0
+    )
+})
+}
+/**
  * Whether a script pubkey is provably segwit
  */
 public func isProvablySegwit(scriptPubkey: Script, redeemScript: Script?) -> Bool {
@@ -13155,6 +13282,12 @@ private var initializationResult: InitializationResult = {
     let scaffolding_contract_version = ffi_lwk_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
+    }
+    if (uniffi_lwk_checksum_func_derive_asset_id() != 63625) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_func_derive_token_id() != 30312) {
+        return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_func_is_provably_segwit() != 18100) {
         return InitializationResult.apiChecksumMismatch
@@ -13282,6 +13415,33 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_bolt11invoice_timestamp() != 21308) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_lwk_checksum_method_boltzsession_fetch_swaps_info() != 41140) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_invoice() != 64828) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_prepare_pay() != 58796) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_rescue_file() != 51537) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_restorable_reverse_swaps() != 52536) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_restorable_submarine_swaps() != 8598) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_restore_invoice() != 56233) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_restore_prepare_pay() != 43475) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_swap_restore() != 45430) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_lwk_checksum_method_electrumclient_broadcast() != 47006) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -13364,33 +13524,6 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_lightningpayment_bolt11_invoice() != 41990) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_method_lightningsession_fetch_swaps_info() != 5709) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_method_lightningsession_invoice() != 7616) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_method_lightningsession_prepare_pay() != 12045) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_method_lightningsession_rescue_file() != 48466) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_method_lightningsession_restorable_reverse_swaps() != 49023) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_method_lightningsession_restorable_submarine_swaps() != 38548) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_method_lightningsession_restore_invoice() != 7598) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_method_lightningsession_restore_prepare_pay() != 10057) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_method_lightningsession_swap_restore() != 24995) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_logging_log() != 50033) {
@@ -13592,6 +13725,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_transaction_bytes() != 48994) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_transaction_discount_vsize() != 15950) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_transaction_fee() != 21760) {
@@ -13873,6 +14009,12 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_constructor_bolt11invoice_new() != 63126) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_lwk_checksum_constructor_boltzsession_from_builder() != 64185) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_constructor_boltzsession_new() != 40021) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_lwk_checksum_constructor_contract_new() != 55905) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -13898,9 +14040,6 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_constructor_lightningpayment_new() != 20178) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_lwk_checksum_constructor_lightningsession_new() != 6987) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_constructor_logginglink_new() != 31235) {
