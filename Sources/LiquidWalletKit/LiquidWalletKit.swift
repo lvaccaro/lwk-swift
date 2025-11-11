@@ -3015,6 +3015,11 @@ public func FfiConverterTypeBolt11Invoice_lower(_ value: Bolt11Invoice) -> Unsaf
 public protocol BoltzSessionProtocol : AnyObject {
     
     /**
+     * Create an onchain swap to convert BTC to LBTC
+     */
+    func btcToLbtc(amount: UInt64, refundAddress: String, claimAddress: Address, webhook: WebHook?) throws  -> LockupResponse
+    
+    /**
      * Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
      */
     func fetchSwapsInfo() throws  -> String
@@ -3023,6 +3028,19 @@ public protocol BoltzSessionProtocol : AnyObject {
      * Create a new invoice for a given amount and a claim address to receive the payment
      */
     func invoice(amount: UInt64, description: String?, claimAddress: Address, webhook: WebHook?) throws  -> InvoiceResponse
+    
+    /**
+     * Create an onchain swap to convert LBTC to BTC
+     */
+    func lbtcToBtc(amount: UInt64, refundAddress: Address, claimAddress: String, webhook: WebHook?) throws  -> LockupResponse
+    
+    /**
+     * Get the next index to use for deriving keypairs
+     *
+     * Users should call this after each created swap and store in persisting memory, so that is passed
+     * when creating a new session with the same mnemonic.
+     */
+    func nextIndexToUse()  -> UInt32
     
     /**
      * Prepare to pay a bolt11 invoice
@@ -3148,6 +3166,20 @@ public static func fromBuilder(builder: BoltzSessionBuilder)throws  -> BoltzSess
 
     
     /**
+     * Create an onchain swap to convert BTC to LBTC
+     */
+open func btcToLbtc(amount: UInt64, refundAddress: String, claimAddress: Address, webhook: WebHook?)throws  -> LockupResponse {
+    return try  FfiConverterTypeLockupResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_btc_to_lbtc(self.uniffiClonePointer(),
+        FfiConverterUInt64.lower(amount),
+        FfiConverterString.lower(refundAddress),
+        FfiConverterTypeAddress.lower(claimAddress),
+        FfiConverterOptionTypeWebHook.lower(webhook),$0
+    )
+})
+}
+    
+    /**
      * Fetch informations, such as min and max amounts, about the reverse and submarine pairs from the boltz api.
      */
 open func fetchSwapsInfo()throws  -> String {
@@ -3167,6 +3199,33 @@ open func invoice(amount: UInt64, description: String?, claimAddress: Address, w
         FfiConverterOptionString.lower(description),
         FfiConverterTypeAddress.lower(claimAddress),
         FfiConverterOptionTypeWebHook.lower(webhook),$0
+    )
+})
+}
+    
+    /**
+     * Create an onchain swap to convert LBTC to BTC
+     */
+open func lbtcToBtc(amount: UInt64, refundAddress: Address, claimAddress: String, webhook: WebHook?)throws  -> LockupResponse {
+    return try  FfiConverterTypeLockupResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_lbtc_to_btc(self.uniffiClonePointer(),
+        FfiConverterUInt64.lower(amount),
+        FfiConverterTypeAddress.lower(refundAddress),
+        FfiConverterString.lower(claimAddress),
+        FfiConverterOptionTypeWebHook.lower(webhook),$0
+    )
+})
+}
+    
+    /**
+     * Get the next index to use for deriving keypairs
+     *
+     * Users should call this after each created swap and store in persisting memory, so that is passed
+     * when creating a new session with the same mnemonic.
+     */
+open func nextIndexToUse() -> UInt32 {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+    uniffi_lwk_fn_method_boltzsession_next_index_to_use(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -5050,6 +5109,189 @@ public func FfiConverterTypeLightningPayment_lift(_ pointer: UnsafeMutableRawPoi
 #endif
 public func FfiConverterTypeLightningPayment_lower(_ value: LightningPayment) -> UnsafeMutableRawPointer {
     return FfiConverterTypeLightningPayment.lower(value)
+}
+
+
+
+
+public protocol LockupResponseProtocol : AnyObject {
+    
+    func advance() throws  -> PaymentState
+    
+    func chainFrom() throws  -> String
+    
+    func chainTo() throws  -> String
+    
+    func complete() throws  -> Bool
+    
+    func expectedAmount() throws  -> UInt64
+    
+    func lockupAddress() throws  -> String
+    
+    func serialize() throws  -> String
+    
+    func swapId() throws  -> String
+    
+}
+
+open class LockupResponse:
+    LockupResponseProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_lockupresponse(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_lockupresponse(pointer, $0) }
+    }
+
+    
+
+    
+open func advance()throws  -> PaymentState {
+    return try  FfiConverterTypePaymentState.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lockupresponse_advance(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func chainFrom()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lockupresponse_chain_from(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func chainTo()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lockupresponse_chain_to(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func complete()throws  -> Bool {
+    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lockupresponse_complete(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func expectedAmount()throws  -> UInt64 {
+    return try  FfiConverterUInt64.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lockupresponse_expected_amount(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func lockupAddress()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lockupresponse_lockup_address(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func serialize()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lockupresponse_serialize(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func swapId()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_lockupresponse_swap_id(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLockupResponse: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = LockupResponse
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> LockupResponse {
+        return LockupResponse(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: LockupResponse) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LockupResponse {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: LockupResponse, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLockupResponse_lift(_ pointer: UnsafeMutableRawPointer) throws -> LockupResponse {
+    return try FfiConverterTypeLockupResponse.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLockupResponse_lower(_ value: LockupResponse) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeLockupResponse.lower(value)
 }
 
 
@@ -11683,10 +11925,11 @@ public struct BoltzSessionBuilder {
     public var logging: Logging?
     public var polling: Bool
     public var timeoutAdvance: UInt64?
+    public var nextIndexToUse: UInt32?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(network: Network, client: AnyClient, timeout: UInt64? = nil, mnemonic: Mnemonic? = nil, logging: Logging? = nil, polling: Bool = false, timeoutAdvance: UInt64? = nil) {
+    public init(network: Network, client: AnyClient, timeout: UInt64? = nil, mnemonic: Mnemonic? = nil, logging: Logging? = nil, polling: Bool = false, timeoutAdvance: UInt64? = nil, nextIndexToUse: UInt32? = nil) {
         self.network = network
         self.client = client
         self.timeout = timeout
@@ -11694,6 +11937,7 @@ public struct BoltzSessionBuilder {
         self.logging = logging
         self.polling = polling
         self.timeoutAdvance = timeoutAdvance
+        self.nextIndexToUse = nextIndexToUse
     }
 }
 
@@ -11712,7 +11956,8 @@ public struct FfiConverterTypeBoltzSessionBuilder: FfiConverterRustBuffer {
                 mnemonic: FfiConverterOptionTypeMnemonic.read(from: &buf), 
                 logging: FfiConverterOptionTypeLogging.read(from: &buf), 
                 polling: FfiConverterBool.read(from: &buf), 
-                timeoutAdvance: FfiConverterOptionUInt64.read(from: &buf)
+                timeoutAdvance: FfiConverterOptionUInt64.read(from: &buf), 
+                nextIndexToUse: FfiConverterOptionUInt32.read(from: &buf)
         )
     }
 
@@ -11724,6 +11969,7 @@ public struct FfiConverterTypeBoltzSessionBuilder: FfiConverterRustBuffer {
         FfiConverterOptionTypeLogging.write(value.logging, into: &buf)
         FfiConverterBool.write(value.polling, into: &buf)
         FfiConverterOptionUInt64.write(value.timeoutAdvance, into: &buf)
+        FfiConverterOptionUInt32.write(value.nextIndexToUse, into: &buf)
     }
 }
 
@@ -13415,10 +13661,19 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_bolt11invoice_timestamp() != 21308) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_lwk_checksum_method_boltzsession_btc_to_lbtc() != 27693) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_lwk_checksum_method_boltzsession_fetch_swaps_info() != 41140) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_boltzsession_invoice() != 64828) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_lbtc_to_btc() != 20669) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_next_index_to_use() != 31356) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_boltzsession_prepare_pay() != 58796) {
@@ -13524,6 +13779,30 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_lightningpayment_bolt11_invoice() != 41990) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lockupresponse_advance() != 46331) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lockupresponse_chain_from() != 2081) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lockupresponse_chain_to() != 10065) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lockupresponse_complete() != 62964) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lockupresponse_expected_amount() != 53174) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lockupresponse_lockup_address() != 49127) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lockupresponse_serialize() != 43231) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_lockupresponse_swap_id() != 36526) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_logging_log() != 50033) {
