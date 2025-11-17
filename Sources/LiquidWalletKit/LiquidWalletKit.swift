@@ -1815,7 +1815,7 @@ public protocol Amp2Protocol : AnyObject {
     /**
      * Register an AMP2 wallet with the AMP2 server
      */
-    func register(desc: Amp2Descriptor) throws  -> String
+    func registerWallet(desc: Amp2Descriptor) throws  -> String
     
 }
 
@@ -1907,9 +1907,9 @@ open func descriptorFromStr(keyoriginXpub: String)throws  -> Amp2Descriptor {
     /**
      * Register an AMP2 wallet with the AMP2 server
      */
-open func register(desc: Amp2Descriptor)throws  -> String {
+open func registerWallet(desc: Amp2Descriptor)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
-    uniffi_lwk_fn_method_amp2_register(self.uniffiClonePointer(),
+    uniffi_lwk_fn_method_amp2_register_wallet(self.uniffiClonePointer(),
         FfiConverterTypeAmp2Descriptor.lower(desc),$0
     )
 })
@@ -3011,6 +3011,8 @@ public func FfiConverterTypeBolt11Invoice_lower(_ value: Bolt11Invoice) -> Unsaf
  * A session to pay and receive lightning payments.
  *
  * Lightning payments are done via LBTC swaps using Boltz.
+ *
+ * See `BoltzSessionBuilder` for various options to configure the session.
  */
 public protocol BoltzSessionProtocol : AnyObject {
     
@@ -3071,9 +3073,21 @@ public protocol BoltzSessionProtocol : AnyObject {
     func restoreInvoice(data: String) throws  -> InvoiceResponse
     
     /**
+     * Restore an onchain swap from its serialized data see `LockupResponse::serialize`
+     */
+    func restoreLockup(data: String) throws  -> LockupResponse
+    
+    /**
      * Restore a payment from its serialized data see `PreparePayResponse::serialize`
      */
     func restorePreparePay(data: String) throws  -> PreparePayResponse
+    
+    /**
+     * Set the next index to use for deriving keypairs
+     *
+     * This may be necessary to handle multiple sessions with the same mnemonic.
+     */
+    func setNextIndexToUse(nextIndexToUse: UInt32) 
     
     /**
      * Returns a the list of all the swaps ever done with the session mnemonic.
@@ -3088,6 +3102,8 @@ public protocol BoltzSessionProtocol : AnyObject {
  * A session to pay and receive lightning payments.
  *
  * Lightning payments are done via LBTC swaps using Boltz.
+ *
+ * See `BoltzSessionBuilder` for various options to configure the session.
  */
 open class BoltzSession:
     BoltzSessionProtocol {
@@ -3292,6 +3308,17 @@ open func restoreInvoice(data: String)throws  -> InvoiceResponse {
 }
     
     /**
+     * Restore an onchain swap from its serialized data see `LockupResponse::serialize`
+     */
+open func restoreLockup(data: String)throws  -> LockupResponse {
+    return try  FfiConverterTypeLockupResponse.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_boltzsession_restore_lockup(self.uniffiClonePointer(),
+        FfiConverterString.lower(data),$0
+    )
+})
+}
+    
+    /**
      * Restore a payment from its serialized data see `PreparePayResponse::serialize`
      */
 open func restorePreparePay(data: String)throws  -> PreparePayResponse {
@@ -3300,6 +3327,18 @@ open func restorePreparePay(data: String)throws  -> PreparePayResponse {
         FfiConverterString.lower(data),$0
     )
 })
+}
+    
+    /**
+     * Set the next index to use for deriving keypairs
+     *
+     * This may be necessary to handle multiple sessions with the same mnemonic.
+     */
+open func setNextIndexToUse(nextIndexToUse: UInt32) {try! rustCall() {
+    uniffi_lwk_fn_method_boltzsession_set_next_index_to_use(self.uniffiClonePointer(),
+        FfiConverterUInt32.lower(nextIndexToUse),$0
+    )
+}
 }
     
     /**
@@ -3633,6 +3672,17 @@ public convenience init(electrumUrl: String, tls: Bool, validateDomain: Bool)thr
         try! rustCall { uniffi_lwk_fn_free_electrumclient(pointer, $0) }
     }
 
+    
+    /**
+     * Construct an electrum client from an Electrum URL
+     */
+public static func fromUrl(electrumUrl: String)throws  -> ElectrumClient {
+    return try  FfiConverterTypeElectrumClient.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_constructor_electrumclient_from_url(
+        FfiConverterString.lower(electrumUrl),$0
+    )
+})
+}
     
 
     
@@ -7842,12 +7892,6 @@ public func FfiConverterTypeRecipient_lower(_ value: Recipient) -> UnsafeMutable
 public protocol ScriptProtocol : AnyObject {
     
     /**
-     * Return the string representation of the script showing op codes and their arguments.
-     * For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
-     */
-    func asm()  -> String
-    
-    /**
      * Return the consensus encoded bytes of the script.
      */
     func bytes()  -> Data
@@ -7856,6 +7900,12 @@ public protocol ScriptProtocol : AnyObject {
      * Whether a script pubkey is provably unspendable (like a burn script)
      */
     func isProvablyUnspendable()  -> Bool
+    
+    /**
+     * Return the string representation of the script showing op codes and their arguments.
+     * For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
+     */
+    func toAsm()  -> String
     
 }
 
@@ -7926,17 +7976,6 @@ public convenience init(hex: Hex)throws  {
 
     
     /**
-     * Return the string representation of the script showing op codes and their arguments.
-     * For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
-     */
-open func asm() -> String {
-    return try!  FfiConverterString.lift(try! rustCall() {
-    uniffi_lwk_fn_method_script_asm(self.uniffiClonePointer(),$0
-    )
-})
-}
-    
-    /**
      * Return the consensus encoded bytes of the script.
      */
 open func bytes() -> Data {
@@ -7952,6 +7991,17 @@ open func bytes() -> Data {
 open func isProvablyUnspendable() -> Bool {
     return try!  FfiConverterBool.lift(try! rustCall() {
     uniffi_lwk_fn_method_script_is_provably_unspendable(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Return the string representation of the script showing op codes and their arguments.
+     * For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
+     */
+open func toAsm() -> String {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_script_to_asm(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -11136,11 +11186,12 @@ open class WebHook:
     public func uniffiClonePointer() -> UnsafeMutableRawPointer {
         return try! rustCall { uniffi_lwk_fn_clone_webhook(self.pointer, $0) }
     }
-public convenience init(url: String) {
+public convenience init(url: String, status: [String]) {
     let pointer =
         try! rustCall() {
     uniffi_lwk_fn_constructor_webhook_new(
-        FfiConverterString.lower(url),$0
+        FfiConverterString.lower(url),
+        FfiConverterSequenceString.lower(status),$0
     )
 }
     self.init(unsafeFromRawPointer: pointer)
@@ -11926,10 +11977,13 @@ public struct BoltzSessionBuilder {
     public var polling: Bool
     public var timeoutAdvance: UInt64?
     public var nextIndexToUse: UInt32?
+    public var referralId: String?
+    public var bitcoinElectrumClientUrl: String?
+    public var randomPreimages: Bool
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(network: Network, client: AnyClient, timeout: UInt64? = nil, mnemonic: Mnemonic? = nil, logging: Logging? = nil, polling: Bool = false, timeoutAdvance: UInt64? = nil, nextIndexToUse: UInt32? = nil) {
+    public init(network: Network, client: AnyClient, timeout: UInt64? = nil, mnemonic: Mnemonic? = nil, logging: Logging? = nil, polling: Bool = false, timeoutAdvance: UInt64? = nil, nextIndexToUse: UInt32? = nil, referralId: String? = nil, bitcoinElectrumClientUrl: String? = nil, randomPreimages: Bool = false) {
         self.network = network
         self.client = client
         self.timeout = timeout
@@ -11938,6 +11992,9 @@ public struct BoltzSessionBuilder {
         self.polling = polling
         self.timeoutAdvance = timeoutAdvance
         self.nextIndexToUse = nextIndexToUse
+        self.referralId = referralId
+        self.bitcoinElectrumClientUrl = bitcoinElectrumClientUrl
+        self.randomPreimages = randomPreimages
     }
 }
 
@@ -11957,7 +12014,10 @@ public struct FfiConverterTypeBoltzSessionBuilder: FfiConverterRustBuffer {
                 logging: FfiConverterOptionTypeLogging.read(from: &buf), 
                 polling: FfiConverterBool.read(from: &buf), 
                 timeoutAdvance: FfiConverterOptionUInt64.read(from: &buf), 
-                nextIndexToUse: FfiConverterOptionUInt32.read(from: &buf)
+                nextIndexToUse: FfiConverterOptionUInt32.read(from: &buf), 
+                referralId: FfiConverterOptionString.read(from: &buf), 
+                bitcoinElectrumClientUrl: FfiConverterOptionString.read(from: &buf), 
+                randomPreimages: FfiConverterBool.read(from: &buf)
         )
     }
 
@@ -11970,6 +12030,9 @@ public struct FfiConverterTypeBoltzSessionBuilder: FfiConverterRustBuffer {
         FfiConverterBool.write(value.polling, into: &buf)
         FfiConverterOptionUInt64.write(value.timeoutAdvance, into: &buf)
         FfiConverterOptionUInt32.write(value.nextIndexToUse, into: &buf)
+        FfiConverterOptionString.write(value.referralId, into: &buf)
+        FfiConverterOptionString.write(value.bitcoinElectrumClientUrl, into: &buf)
+        FfiConverterBool.write(value.randomPreimages, into: &buf)
     }
 }
 
@@ -13604,7 +13667,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_amp2_descriptor_from_str() != 752) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lwk_checksum_method_amp2_register() != 53300) {
+    if (uniffi_lwk_checksum_method_amp2_register_wallet() != 64376) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_amp2descriptor_descriptor() != 61502) {
@@ -13691,7 +13754,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_boltzsession_restore_invoice() != 56233) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_lwk_checksum_method_boltzsession_restore_lockup() != 29841) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_lwk_checksum_method_boltzsession_restore_prepare_pay() != 43475) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_boltzsession_set_next_index_to_use() != 46243) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_boltzsession_swap_restore() != 45430) {
@@ -13958,13 +14027,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_recipient_vout() != 24321) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lwk_checksum_method_script_asm() != 42582) {
-        return InitializationResult.apiChecksumMismatch
-    }
     if (uniffi_lwk_checksum_method_script_bytes() != 35040) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_script_is_provably_unspendable() != 12490) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_script_to_asm() != 32896) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_secretkey_bytes() != 43476) {
@@ -14297,6 +14366,9 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_constructor_contract_new() != 55905) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_lwk_checksum_constructor_electrumclient_from_url() != 21158) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_lwk_checksum_constructor_electrumclient_new() != 26281) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -14390,7 +14462,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_constructor_update_new() != 5357) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lwk_checksum_constructor_webhook_new() != 1028) {
+    if (uniffi_lwk_checksum_constructor_webhook_new() != 14880) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_constructor_wollet_new() != 15308) {
