@@ -3038,9 +3038,6 @@ public protocol BoltzSessionProtocol : AnyObject {
     
     /**
      * Get the next index to use for deriving keypairs
-     *
-     * Users should call this after each created swap and store in persisting memory, so that is passed
-     * when creating a new session with the same mnemonic.
      */
     func nextIndexToUse()  -> UInt32
     
@@ -3235,9 +3232,6 @@ open func lbtcToBtc(amount: UInt64, refundAddress: Address, claimAddress: String
     
     /**
      * Get the next index to use for deriving keypairs
-     *
-     * Users should call this after each created swap and store in persisting memory, so that is passed
-     * when creating a new session with the same mnemonic.
      */
 open func nextIndexToUse() -> UInt32 {
     return try!  FfiConverterUInt32.lift(try! rustCall() {
@@ -4586,6 +4580,14 @@ public protocol InvoiceResponseProtocol : AnyObject {
     func completePay() throws  -> Bool
     
     /**
+     * The fee of the swap provider
+     *
+     * It is equal to the amount of the invoice minus the amount of the onchain transaction.
+     * Does not include the fee of the onchain transaction.
+     */
+    func fee() throws  -> UInt64?
+    
+    /**
      * Serialize the prepare pay response data to a json string
      *
      * This can be used to restore the prepare pay response after a crash
@@ -4663,6 +4665,19 @@ open func bolt11Invoice()throws  -> Bolt11Invoice {
 open func completePay()throws  -> Bool {
     return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
     uniffi_lwk_fn_method_invoiceresponse_complete_pay(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * The fee of the swap provider
+     *
+     * It is equal to the amount of the invoice minus the amount of the onchain transaction.
+     * Does not include the fee of the onchain transaction.
+     */
+open func fee()throws  -> UInt64? {
+    return try  FfiConverterOptionUInt64.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_invoiceresponse_fee(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -6681,6 +6696,14 @@ public protocol PreparePayResponseProtocol : AnyObject {
     func completePay() throws  -> Bool
     
     /**
+     * The fee of the swap provider
+     *
+     * It is equal to the amount requested onchain minus the amount of the bolt11 invoice
+     * Does not include the fee of the onchain transaction.
+     */
+    func fee() throws  -> UInt64?
+    
+    /**
      * Serialize the prepare pay response data to a json string
      *
      * This can be used to restore the prepare pay response after a crash
@@ -6757,6 +6780,19 @@ open func advance()throws  -> PaymentState {
 open func completePay()throws  -> Bool {
     return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
     uniffi_lwk_fn_method_preparepayresponse_complete_pay(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * The fee of the swap provider
+     *
+     * It is equal to the amount requested onchain minus the amount of the bolt11 invoice
+     * Does not include the fee of the onchain transaction.
+     */
+open func fee()throws  -> UInt64? {
+    return try  FfiConverterOptionUInt64.lift(try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_preparepayresponse_fee(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -8993,6 +9029,11 @@ public protocol TxBuilderProtocol : AnyObject {
     func addExternalUtxos(utxos: [ExternalUtxo]) throws 
     
     /**
+     * Add input rangeproofs
+     */
+    func addInputRangeproofs(addRangeproofs: Bool) throws 
+    
+    /**
      * Add a recipient receiving L-BTC
      */
     func addLbtcRecipient(address: Address, satoshi: UInt64) throws 
@@ -9183,6 +9224,16 @@ open func addExplicitRecipient(address: Address, satoshi: UInt64, asset: AssetId
 open func addExternalUtxos(utxos: [ExternalUtxo])throws  {try rustCallWithError(FfiConverterTypeLwkError.lift) {
     uniffi_lwk_fn_method_txbuilder_add_external_utxos(self.uniffiClonePointer(),
         FfiConverterSequenceTypeExternalUtxo.lower(utxos),$0
+    )
+}
+}
+    
+    /**
+     * Add input rangeproofs
+     */
+open func addInputRangeproofs(addRangeproofs: Bool)throws  {try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_method_txbuilder_add_input_rangeproofs(self.uniffiClonePointer(),
+        FfiConverterBool.lower(addRangeproofs),$0
     )
 }
 }
@@ -13780,7 +13831,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_boltzsession_lbtc_to_btc() != 20669) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lwk_checksum_method_boltzsession_next_index_to_use() != 31356) {
+    if (uniffi_lwk_checksum_method_boltzsession_next_index_to_use() != 9036) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_boltzsession_prepare_pay() != 58796) {
@@ -13853,6 +13904,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_invoiceresponse_complete_pay() != 2434) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_invoiceresponse_fee() != 18219) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_invoiceresponse_serialize() != 38841) {
@@ -13979,6 +14033,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_preparepayresponse_complete_pay() != 40255) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_preparepayresponse_fee() != 882) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_preparepayresponse_serialize() != 33437) {
@@ -14147,6 +14204,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_txbuilder_add_external_utxos() != 22348) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_txbuilder_add_input_rangeproofs() != 13756) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_txbuilder_add_lbtc_recipient() != 895) {
