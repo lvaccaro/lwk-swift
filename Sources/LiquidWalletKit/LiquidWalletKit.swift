@@ -573,6 +573,11 @@ public protocol AddressProtocol : AnyObject {
     func isBlinded()  -> Bool
     
     /**
+     * Returns the network of the address
+     */
+    func network()  -> Network
+    
+    /**
      * Returns a string of the QR code printable in a terminal environment
      */
     func qrCodeText() throws  -> String
@@ -671,6 +676,16 @@ public convenience init(s: String)throws  {
 open func isBlinded() -> Bool {
     return try!  FfiConverterBool.lift(try! rustCall() {
     uniffi_lwk_fn_method_address_is_blinded(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the network of the address
+     */
+open func network() -> Network {
+    return try!  FfiConverterTypeNetwork.lift(try! rustCall() {
+    uniffi_lwk_fn_method_address_network(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -2529,9 +2544,586 @@ public func FfiConverterTypeBip_lower(_ value: Bip) -> UnsafeMutableRawPointer {
 
 
 /**
+ * A parsed Bitcoin BIP21 URI with optional parameters.
+ *
+ * BIP21 URIs have the format: `bitcoin:<address>?amount=<amount>&label=<label>&message=<message>`
+ * They can also include lightning parameters like `lightning=<bolt11>` or `lno=<bolt12>`.
+ */
+public protocol Bip21Protocol : AnyObject {
+    
+    /**
+     * Returns the Bitcoin address from the BIP21 URI
+     */
+    func address()  -> BitcoinAddress
+    
+    /**
+     * Returns the amount in satoshis if present
+     */
+    func amount()  -> UInt64?
+    
+    /**
+     * Returns the original URI string
+     */
+    func asStr()  -> String
+    
+    /**
+     * Returns the label if present
+     */
+    func label()  -> String?
+    
+    /**
+     * Returns the lightning BOLT11 invoice as a string if present
+     */
+    func lightning()  -> Bolt11Invoice?
+    
+    /**
+     * Returns the message if present
+     */
+    func message()  -> String?
+    
+    /**
+     * Returns the BOLT12 offer as a string if present
+     */
+    func offer()  -> String?
+    
+    /**
+     * Returns the payjoin endpoint URL if present
+     */
+    func payjoin()  -> String?
+    
+    /**
+     * Returns whether payjoin output substitution is allowed (defaults to true if absent)
+     */
+    func payjoinOutputSubstitution()  -> Bool
+    
+    /**
+     * Returns the silent payment address (BIP-352) if present
+     */
+    func silentPaymentAddress()  -> String?
+    
+}
+
+/**
+ * A parsed Bitcoin BIP21 URI with optional parameters.
+ *
+ * BIP21 URIs have the format: `bitcoin:<address>?amount=<amount>&label=<label>&message=<message>`
+ * They can also include lightning parameters like `lightning=<bolt11>` or `lno=<bolt12>`.
+ */
+open class Bip21:
+    Bip21Protocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_bip21(self.pointer, $0) }
+    }
+    /**
+     * Parse a BIP21 URI string
+     */
+public convenience init(s: String)throws  {
+    let pointer =
+        try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_constructor_bip21_new(
+        FfiConverterString.lower(s),$0
+    )
+}
+    self.init(unsafeFromRawPointer: pointer)
+}
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_bip21(pointer, $0) }
+    }
+
+    
+
+    
+    /**
+     * Returns the Bitcoin address from the BIP21 URI
+     */
+open func address() -> BitcoinAddress {
+    return try!  FfiConverterTypeBitcoinAddress.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_address(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the amount in satoshis if present
+     */
+open func amount() -> UInt64? {
+    return try!  FfiConverterOptionUInt64.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_amount(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the original URI string
+     */
+open func asStr() -> String {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_as_str(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the label if present
+     */
+open func label() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_label(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the lightning BOLT11 invoice as a string if present
+     */
+open func lightning() -> Bolt11Invoice? {
+    return try!  FfiConverterOptionTypeBolt11Invoice.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_lightning(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the message if present
+     */
+open func message() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_message(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the BOLT12 offer as a string if present
+     */
+open func offer() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_offer(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the payjoin endpoint URL if present
+     */
+open func payjoin() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_payjoin(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns whether payjoin output substitution is allowed (defaults to true if absent)
+     */
+open func payjoinOutputSubstitution() -> Bool {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_payjoin_output_substitution(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the silent payment address (BIP-352) if present
+     */
+open func silentPaymentAddress() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip21_silent_payment_address(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBip21: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Bip21
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Bip21 {
+        return Bip21(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Bip21) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Bip21 {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Bip21, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBip21_lift(_ pointer: UnsafeMutableRawPointer) throws -> Bip21 {
+    return try FfiConverterTypeBip21.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBip21_lower(_ value: Bip21) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeBip21.lower(value)
+}
+
+
+
+
+/**
+ * A parsed Bitcoin BIP321 URI with optional parameters.
+ *
+ * BIP321 extends BIP21 by allowing URIs without a bitcoin address in the path,
+ * as long as there is at least one payment instruction in the query parameters.
+ *
+ * For example: `bitcoin:?ark=ark1qq...&amount=0.00000222`
+ */
+public protocol Bip321Protocol : AnyObject {
+    
+    /**
+     * Returns the amount in satoshis if present
+     */
+    func amount()  -> UInt64?
+    
+    /**
+     * Returns the ark address if present
+     */
+    func ark()  -> String?
+    
+    /**
+     * Returns the original URI string
+     */
+    func asStr()  -> String
+    
+    /**
+     * Returns the label if present
+     */
+    func label()  -> String?
+    
+    /**
+     * Returns the lightning BOLT11 invoice as a string if present
+     */
+    func lightning()  -> Bolt11Invoice?
+    
+    /**
+     * Returns the message if present
+     */
+    func message()  -> String?
+    
+    /**
+     * Returns the BOLT12 offer as a string if present
+     */
+    func offer()  -> String?
+    
+    /**
+     * Returns the payjoin endpoint URL if present
+     */
+    func payjoin()  -> String?
+    
+    /**
+     * Returns whether payjoin output substitution is allowed (defaults to true if absent)
+     */
+    func payjoinOutputSubstitution()  -> Bool
+    
+    /**
+     * Returns the silent payment address (BIP-352) if present
+     */
+    func silentPaymentAddress()  -> String?
+    
+}
+
+/**
+ * A parsed Bitcoin BIP321 URI with optional parameters.
+ *
+ * BIP321 extends BIP21 by allowing URIs without a bitcoin address in the path,
+ * as long as there is at least one payment instruction in the query parameters.
+ *
+ * For example: `bitcoin:?ark=ark1qq...&amount=0.00000222`
+ */
+open class Bip321:
+    Bip321Protocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_bip321(self.pointer, $0) }
+    }
+    /**
+     * Parse a BIP321 URI string
+     */
+public convenience init(s: String)throws  {
+    let pointer =
+        try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_constructor_bip321_new(
+        FfiConverterString.lower(s),$0
+    )
+}
+    self.init(unsafeFromRawPointer: pointer)
+}
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_bip321(pointer, $0) }
+    }
+
+    
+
+    
+    /**
+     * Returns the amount in satoshis if present
+     */
+open func amount() -> UInt64? {
+    return try!  FfiConverterOptionUInt64.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_amount(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the ark address if present
+     */
+open func ark() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_ark(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the original URI string
+     */
+open func asStr() -> String {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_as_str(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the label if present
+     */
+open func label() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_label(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the lightning BOLT11 invoice as a string if present
+     */
+open func lightning() -> Bolt11Invoice? {
+    return try!  FfiConverterOptionTypeBolt11Invoice.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_lightning(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the message if present
+     */
+open func message() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_message(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the BOLT12 offer as a string if present
+     */
+open func offer() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_offer(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the payjoin endpoint URL if present
+     */
+open func payjoin() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_payjoin(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns whether payjoin output substitution is allowed (defaults to true if absent)
+     */
+open func payjoinOutputSubstitution() -> Bool {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_payjoin_output_substitution(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the silent payment address (BIP-352) if present
+     */
+open func silentPaymentAddress() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bip321_silent_payment_address(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBip321: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Bip321
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Bip321 {
+        return Bip321(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Bip321) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Bip321 {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Bip321, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBip321_lift(_ pointer: UnsafeMutableRawPointer) throws -> Bip321 {
+    return try FfiConverterTypeBip321.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBip321_lower(_ value: Bip321) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeBip321.lower(value)
+}
+
+
+
+
+/**
  * A valid Bitcoin address
  */
 public protocol BitcoinAddressProtocol : AnyObject {
+    
+    /**
+     * Returns the network of the address
+     */
+    func isMainnet()  -> Bool
     
 }
 
@@ -2599,6 +3191,16 @@ public convenience init(s: String)throws  {
 
     
 
+    
+    /**
+     * Returns the network of the address
+     */
+open func isMainnet() -> Bool {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_lwk_fn_method_bitcoinaddress_is_mainnet(self.uniffiClonePointer(),$0
+    )
+})
+}
     
     open var description: String {
         return try!  FfiConverterString.lift(
@@ -6326,6 +6928,7 @@ public protocol NetworkProtocol : AnyObject {
  */
 open class Network:
     CustomStringConvertible,
+    Equatable,
     NetworkProtocol {
     fileprivate let pointer: UnsafeMutableRawPointer!
 
@@ -6470,6 +7073,15 @@ open func txBuilder() -> TxBuilder {
         return try!  FfiConverterString.lift(
             try! rustCall() {
     uniffi_lwk_fn_method_network_uniffi_trait_display(self.uniffiClonePointer(),$0
+    )
+}
+        )
+    }
+    public static func == (self: Network, other: Network) -> Bool {
+        return try!  FfiConverterBool.lift(
+            try! rustCall() {
+    uniffi_lwk_fn_method_network_uniffi_trait_eq_eq(self.uniffiClonePointer(),
+        FfiConverterTypeNetwork.lower(other),$0
     )
 }
         )
@@ -6695,6 +7307,315 @@ public func FfiConverterTypeOutPoint_lift(_ pointer: UnsafeMutableRawPointer) th
 #endif
 public func FfiConverterTypeOutPoint_lower(_ value: OutPoint) -> UnsafeMutableRawPointer {
     return FfiConverterTypeOutPoint.lower(value)
+}
+
+
+
+
+/**
+ * A parsed payment category from a payment instruction string.
+ *
+ * This can be a Bitcoin address, Liquid address, Lightning invoice,
+ * Lightning offer, LNURL, BIP353, BIP21 URI, or Liquid BIP21 URI.
+ */
+public protocol PaymentProtocol : AnyObject {
+    
+    /**
+     * Returns the BIP21 URI if this is a Bip21 category, None otherwise
+     */
+    func bip21()  -> Bip21?
+    
+    /**
+     * Returns the BIP321 URI if this is a Bip321 category, None otherwise
+     */
+    func bip321()  -> Bip321?
+    
+    /**
+     * Returns the BIP353 address (without the ₿ prefix) if this is a Bip353 category, None otherwise
+     */
+    func bip353()  -> String?
+    
+    /**
+     * Returns the Bitcoin address if this is a BitcoinAddress category, None otherwise
+     *
+     * Returns the address portion of the original input string
+     */
+    func bitcoinAddress()  -> BitcoinAddress?
+    
+    /**
+     * Returns the kind of payment category
+     */
+    func kind()  -> PaymentKind
+    
+    /**
+     * Returns the Lightning invoice if this is a `LightningInvoice` category, `None` otherwise
+     */
+    func lightningInvoice()  -> Bolt11Invoice?
+    
+    /**
+     * Returns the Lightning offer as a string if this is a LightningOffer category, None otherwise
+     */
+    func lightningOffer()  -> String?
+    
+    /**
+     * Returns a `LightningPayment`` if this category is payable via Lightning
+     *
+     * Returns `Some` for `LightningInvoice`, `LightningOffer`, and `LnUrl` categories.
+     * The returned `LightningPayment` can be used with `BoltzSession::prepare_pay()`.
+     */
+    func lightningPayment()  -> LightningPayment?
+    
+    /**
+     * Returns the Liquid address if this is a LiquidAddress category, None otherwise
+     */
+    func liquidAddress()  -> Address?
+    
+    /**
+     * Returns the Liquid BIP21 details if this is a LiquidBip21 category, None otherwise
+     */
+    func liquidBip21()  -> LiquidBip21?
+    
+    /**
+     * Returns the LNURL as a string if this is an LnUrl category, None otherwise
+     */
+    func lnurl()  -> String?
+    
+}
+
+/**
+ * A parsed payment category from a payment instruction string.
+ *
+ * This can be a Bitcoin address, Liquid address, Lightning invoice,
+ * Lightning offer, LNURL, BIP353, BIP21 URI, or Liquid BIP21 URI.
+ */
+open class Payment:
+    PaymentProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_lwk_fn_clone_payment(self.pointer, $0) }
+    }
+    /**
+     * Parse a payment instruction string into a PaymentCategory
+     */
+public convenience init(s: String)throws  {
+    let pointer =
+        try rustCallWithError(FfiConverterTypeLwkError.lift) {
+    uniffi_lwk_fn_constructor_payment_new(
+        FfiConverterString.lower(s),$0
+    )
+}
+    self.init(unsafeFromRawPointer: pointer)
+}
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_lwk_fn_free_payment(pointer, $0) }
+    }
+
+    
+
+    
+    /**
+     * Returns the BIP21 URI if this is a Bip21 category, None otherwise
+     */
+open func bip21() -> Bip21? {
+    return try!  FfiConverterOptionTypeBip21.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_bip21(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the BIP321 URI if this is a Bip321 category, None otherwise
+     */
+open func bip321() -> Bip321? {
+    return try!  FfiConverterOptionTypeBip321.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_bip321(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the BIP353 address (without the ₿ prefix) if this is a Bip353 category, None otherwise
+     */
+open func bip353() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_bip353(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the Bitcoin address if this is a BitcoinAddress category, None otherwise
+     *
+     * Returns the address portion of the original input string
+     */
+open func bitcoinAddress() -> BitcoinAddress? {
+    return try!  FfiConverterOptionTypeBitcoinAddress.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_bitcoin_address(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the kind of payment category
+     */
+open func kind() -> PaymentKind {
+    return try!  FfiConverterTypePaymentKind.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_kind(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the Lightning invoice if this is a `LightningInvoice` category, `None` otherwise
+     */
+open func lightningInvoice() -> Bolt11Invoice? {
+    return try!  FfiConverterOptionTypeBolt11Invoice.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_lightning_invoice(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the Lightning offer as a string if this is a LightningOffer category, None otherwise
+     */
+open func lightningOffer() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_lightning_offer(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns a `LightningPayment`` if this category is payable via Lightning
+     *
+     * Returns `Some` for `LightningInvoice`, `LightningOffer`, and `LnUrl` categories.
+     * The returned `LightningPayment` can be used with `BoltzSession::prepare_pay()`.
+     */
+open func lightningPayment() -> LightningPayment? {
+    return try!  FfiConverterOptionTypeLightningPayment.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_lightning_payment(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the Liquid address if this is a LiquidAddress category, None otherwise
+     */
+open func liquidAddress() -> Address? {
+    return try!  FfiConverterOptionTypeAddress.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_liquid_address(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the Liquid BIP21 details if this is a LiquidBip21 category, None otherwise
+     */
+open func liquidBip21() -> LiquidBip21? {
+    return try!  FfiConverterOptionTypeLiquidBip21.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_liquid_bip21(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Returns the LNURL as a string if this is an LnUrl category, None otherwise
+     */
+open func lnurl() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_lwk_fn_method_payment_lnurl(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePayment: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Payment
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Payment {
+        return Payment(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Payment) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Payment {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Payment, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePayment_lift(_ pointer: UnsafeMutableRawPointer) throws -> Payment {
+    return try FfiConverterTypePayment.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePayment_lower(_ value: Payment) -> UnsafeMutableRawPointer {
+    return FfiConverterTypePayment.lower(value)
 }
 
 
@@ -12418,6 +13339,79 @@ public func FfiConverterTypeEsploraClientBuilder_lower(_ value: EsploraClientBui
     return FfiConverterTypeEsploraClientBuilder.lower(value)
 }
 
+
+/**
+ * Liquid BIP21 payment details
+ */
+public struct LiquidBip21 {
+    /**
+     * The Liquid address
+     */
+    public var address: Address
+    /**
+     * The asset identifier
+     */
+    public var asset: AssetId
+    /**
+     * The amount in satoshis
+     */
+    public var amount: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The Liquid address
+         */address: Address, 
+        /**
+         * The asset identifier
+         */asset: AssetId, 
+        /**
+         * The amount in satoshis
+         */amount: UInt64) {
+        self.address = address
+        self.asset = asset
+        self.amount = amount
+    }
+}
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLiquidBip21: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LiquidBip21 {
+        return
+            try LiquidBip21(
+                address: FfiConverterTypeAddress.read(from: &buf), 
+                asset: FfiConverterTypeAssetId.read(from: &buf), 
+                amount: FfiConverterUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LiquidBip21, into buf: inout [UInt8]) {
+        FfiConverterTypeAddress.write(value.address, into: &buf)
+        FfiConverterTypeAssetId.write(value.asset, into: &buf)
+        FfiConverterUInt64.write(value.amount, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLiquidBip21_lift(_ buf: RustBuffer) throws -> LiquidBip21 {
+    return try FfiConverterTypeLiquidBip21.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLiquidBip21_lower(_ value: LiquidBip21) -> RustBuffer {
+    return FfiConverterTypeLiquidBip21.lower(value)
+}
+
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 /**
@@ -12764,6 +13758,149 @@ extension LwkError: Foundation.LocalizedError {
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * The kind/type of a payment category without the associated data
+ */
+
+public enum PaymentKind {
+    
+    /**
+     * A Bitcoin address
+     */
+    case bitcoinAddress
+    /**
+     * A Liquid address
+     */
+    case liquidAddress
+    /**
+     * A Lightning BOLT11 invoice
+     */
+    case lightningInvoice
+    /**
+     * A Lightning BOLT12 offer
+     */
+    case lightningOffer
+    /**
+     * An LNURL
+     */
+    case lnUrl
+    /**
+     * A BIP353 payment instruction (₿user@domain)
+     */
+    case bip353
+    /**
+     * A BIP21 URI
+     */
+    case bip21
+    /**
+     * A BIP321 URI (BIP21 without address but with payment method)
+     */
+    case bip321
+    /**
+     * A Liquid BIP21 URI with amount and asset
+     */
+    case liquidBip21
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePaymentKind: FfiConverterRustBuffer {
+    typealias SwiftType = PaymentKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PaymentKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .bitcoinAddress
+        
+        case 2: return .liquidAddress
+        
+        case 3: return .lightningInvoice
+        
+        case 4: return .lightningOffer
+        
+        case 5: return .lnUrl
+        
+        case 6: return .bip353
+        
+        case 7: return .bip21
+        
+        case 8: return .bip321
+        
+        case 9: return .liquidBip21
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PaymentKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .bitcoinAddress:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .liquidAddress:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .lightningInvoice:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .lightningOffer:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .lnUrl:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .bip353:
+            writeInt(&buf, Int32(6))
+        
+        
+        case .bip21:
+            writeInt(&buf, Int32(7))
+        
+        
+        case .bip321:
+            writeInt(&buf, Int32(8))
+        
+        
+        case .liquidBip21:
+            writeInt(&buf, Int32(9))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePaymentKind_lift(_ buf: RustBuffer) throws -> PaymentKind {
+    return try FfiConverterTypePaymentKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePaymentKind_lower(_ value: PaymentKind) -> RustBuffer {
+    return FfiConverterTypePaymentKind.lower(value)
+}
+
+
+
+extension PaymentKind: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum PaymentState {
     
@@ -13044,6 +14181,78 @@ fileprivate struct FfiConverterOptionTypeAddress: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeBip21: FfiConverterRustBuffer {
+    typealias SwiftType = Bip21?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeBip21.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeBip21.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeBip321: FfiConverterRustBuffer {
+    typealias SwiftType = Bip321?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeBip321.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeBip321.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeBitcoinAddress: FfiConverterRustBuffer {
+    typealias SwiftType = BitcoinAddress?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeBitcoinAddress.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeBitcoinAddress.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeBolt11Invoice: FfiConverterRustBuffer {
     typealias SwiftType = Bolt11Invoice?
 
@@ -13108,6 +14317,30 @@ fileprivate struct FfiConverterOptionTypeIssuance: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeIssuance.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeLightningPayment: FfiConverterRustBuffer {
+    typealias SwiftType = LightningPayment?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeLightningPayment.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeLightningPayment.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -13324,6 +14557,30 @@ fileprivate struct FfiConverterOptionTypeWebHook: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeWebHook.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeLiquidBip21: FfiConverterRustBuffer {
+    typealias SwiftType = LiquidBip21?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeLiquidBip21.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeLiquidBip21.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -13904,6 +15161,9 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_method_address_is_blinded() != 13572) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_lwk_checksum_method_address_network() != 47140) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_lwk_checksum_method_address_qr_code_text() != 34918) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -13977,6 +15237,69 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_assetamount_asset() != 51371) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_address() != 22514) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_amount() != 26979) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_as_str() != 64004) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_label() != 62483) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_lightning() != 36718) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_message() != 55940) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_offer() != 28927) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_payjoin() != 54940) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_payjoin_output_substitution() != 29383) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip21_silent_payment_address() != 63677) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_amount() != 34467) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_ark() != 15652) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_as_str() != 63544) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_label() != 53097) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_lightning() != 47241) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_message() != 41299) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_offer() != 45377) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_payjoin() != 63459) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_payjoin_output_substitution() != 7095) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bip321_silent_payment_address() != 55189) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_bitcoinaddress_is_mainnet() != 22224) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_blockheader_block_hash() != 22169) {
@@ -14232,6 +15555,39 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_outpoint_vout() != 28332) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_bip21() != 43062) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_bip321() != 33020) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_bip353() != 36470) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_bitcoin_address() != 29551) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_kind() != 21742) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_lightning_invoice() != 59752) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_lightning_offer() != 57440) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_lightning_payment() != 42254) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_liquid_address() != 15185) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_liquid_bip21() != 62751) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_method_payment_lnurl() != 34751) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_method_precision_sats_to_string() != 20274) {
@@ -14681,6 +16037,12 @@ private var initializationResult: InitializationResult = {
     if (uniffi_lwk_checksum_constructor_bip_new_bip87() != 60988) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_lwk_checksum_constructor_bip21_new() != 63505) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_constructor_bip321_new() != 5120) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_lwk_checksum_constructor_bitcoinaddress_new() != 46661) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -14751,6 +16113,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_constructor_outpoint_new() != 3858) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_lwk_checksum_constructor_payment_new() != 37193) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lwk_checksum_constructor_precision_new() != 7694) {
