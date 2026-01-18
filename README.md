@@ -25,7 +25,7 @@ as a package dependency in Xcode.
 Add the following to the dependencies array of your `Package.swift`:
 
 ``` swift
-.package(url: "https://github.com/blockstream/lwk-swift.git", from: "0.12.8"),
+.package(url: "https://github.com/blockstream/lwk-swift.git", from: "0.13.0"),
 ```
 
 ### CocoaPods
