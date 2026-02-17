@@ -430,22 +430,6 @@ private struct FfiConverterInt8: FfiConverterPrimitive {
 #if swift(>=5.8)
     @_documentation(visibility: private)
 #endif
-private struct FfiConverterUInt16: FfiConverterPrimitive {
-    typealias FfiType = UInt16
-    typealias SwiftType = UInt16
-
-    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt16 {
-        return try lift(readInt(&buf))
-    }
-
-    static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        writeInt(&buf, lower(value))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
 private struct FfiConverterUInt32: FfiConverterPrimitive {
     typealias FfiType = UInt32
     typealias SwiftType = UInt32
@@ -4377,355 +4361,6 @@ public func FfiConverterTypeContract_lower(_ value: Contract) -> UnsafeMutableRa
 }
 
 /**
- * The hash of an asset contract.
- *
- * See [`elements::ContractHash`] for more details.
- */
-public protocol ContractHashProtocol: AnyObject {
-    /**
-     * Returns the bytes (32 bytes).
-     */
-    func toBytes() -> Data
-
-    /**
-     * Returns the hex-encoded representation.
-     */
-    func toHex() -> String
-}
-
-/**
- * The hash of an asset contract.
- *
- * See [`elements::ContractHash`] for more details.
- */
-open class ContractHash:
-    ContractHashProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_contracthash(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_contracthash(pointer, $0) }
-    }
-
-    /**
-     * Creates from a 32-byte slice.
-     */
-    public static func fromBytes(bytes: Data) throws -> ContractHash {
-        return try FfiConverterTypeContractHash.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_contracthash_from_bytes(
-                FfiConverterData.lower(bytes), $0
-            )
-        })
-    }
-
-    /**
-     * Creates from a hex string.
-     */
-    public static func fromHex(hex: String) throws -> ContractHash {
-        return try FfiConverterTypeContractHash.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_contracthash_from_hex(
-                FfiConverterString.lower(hex), $0
-            )
-        })
-    }
-
-    /**
-     * Returns the bytes (32 bytes).
-     */
-    open func toBytes() -> Data {
-        return try! FfiConverterData.lift(try! rustCall {
-            uniffi_lwk_fn_method_contracthash_to_bytes(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Returns the hex-encoded representation.
-     */
-    open func toHex() -> String {
-        return try! FfiConverterString.lift(try! rustCall {
-            uniffi_lwk_fn_method_contracthash_to_hex(self.uniffiClonePointer(), $0)
-        })
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeContractHash: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = ContractHash
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> ContractHash {
-        return ContractHash(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: ContractHash) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ContractHash {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: ContractHash, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeContractHash_lift(_ pointer: UnsafeMutableRawPointer) throws -> ContractHash {
-    return try FfiConverterTypeContractHash.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeContractHash_lower(_ value: ContractHash) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeContractHash.lower(value)
-}
-
-/**
- * A control block for Taproot script-path spending.
- *
- * See [`elements::bitcoin::taproot::ControlBlock`] for more details.
- */
-public protocol ControlBlockProtocol: AnyObject {
-    /**
-     * Get the internal key of the control block.
-     */
-    func internalKey() -> XOnlyPublicKey
-
-    /**
-     * Get the leaf version of the control block.
-     */
-    func leafVersion() -> UInt8
-
-    /**
-     * Get the output key parity (0 for even, 1 for odd).
-     */
-    func outputKeyParity() -> UInt8
-
-    /**
-     * Serialize the control block to bytes.
-     */
-    func serialize() -> Data
-
-    /**
-     * Get the size of the control block in bytes.
-     */
-    func size() -> UInt32
-}
-
-/**
- * A control block for Taproot script-path spending.
- *
- * See [`elements::bitcoin::taproot::ControlBlock`] for more details.
- */
-open class ControlBlock:
-    ControlBlockProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_controlblock(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_controlblock(pointer, $0) }
-    }
-
-    /**
-     * Parse a control block from serialized bytes.
-     */
-    public static func fromSlice(bytes: Data) throws -> ControlBlock {
-        return try FfiConverterTypeControlBlock.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_controlblock_from_slice(
-                FfiConverterData.lower(bytes), $0
-            )
-        })
-    }
-
-    /**
-     * Get the internal key of the control block.
-     */
-    open func internalKey() -> XOnlyPublicKey {
-        return try! FfiConverterTypeXOnlyPublicKey.lift(try! rustCall {
-            uniffi_lwk_fn_method_controlblock_internal_key(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Get the leaf version of the control block.
-     */
-    open func leafVersion() -> UInt8 {
-        return try! FfiConverterUInt8.lift(try! rustCall {
-            uniffi_lwk_fn_method_controlblock_leaf_version(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Get the output key parity (0 for even, 1 for odd).
-     */
-    open func outputKeyParity() -> UInt8 {
-        return try! FfiConverterUInt8.lift(try! rustCall {
-            uniffi_lwk_fn_method_controlblock_output_key_parity(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Serialize the control block to bytes.
-     */
-    open func serialize() -> Data {
-        return try! FfiConverterData.lift(try! rustCall {
-            uniffi_lwk_fn_method_controlblock_serialize(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Get the size of the control block in bytes.
-     */
-    open func size() -> UInt32 {
-        return try! FfiConverterUInt32.lift(try! rustCall {
-            uniffi_lwk_fn_method_controlblock_size(self.uniffiClonePointer(), $0)
-        })
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeControlBlock: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = ControlBlock
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> ControlBlock {
-        return ControlBlock(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: ControlBlock) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ControlBlock {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: ControlBlock, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeControlBlock_lift(_ pointer: UnsafeMutableRawPointer) throws -> ControlBlock {
-    return try FfiConverterTypeControlBlock.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeControlBlock_lower(_ value: ControlBlock) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeControlBlock.lower(value)
-}
-
-/**
  * Currency code as defined by ISO 4217
  */
 public protocol CurrencyCodeProtocol: AnyObject {
@@ -5527,336 +5162,6 @@ public func FfiConverterTypeExternalUtxo_lower(_ value: ExternalUtxo) -> UnsafeM
 }
 
 /**
- * An exported trait, useful for caller-defined persistence.
- */
-public protocol ForeignPersister: AnyObject {
-    /**
-     * Return the update at the given index
-     */
-    func get(index: UInt64) throws -> Update?
-
-    /**
-     * Push an update
-     */
-    func push(update: Update) throws
-}
-
-/**
- * An exported trait, useful for caller-defined persistence.
- */
-open class ForeignPersisterImpl:
-    ForeignPersister
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_foreignpersister(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_foreignpersister(pointer, $0) }
-    }
-
-    /**
-     * Return the update at the given index
-     */
-    open func get(index: UInt64) throws -> Update? {
-        return try FfiConverterOptionTypeUpdate.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_foreignpersister_get(self.uniffiClonePointer(),
-                                                      FfiConverterUInt64.lower(index), $0)
-        })
-    }
-
-    /**
-     * Push an update
-     */
-    open func push(update: Update) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_foreignpersister_push(self.uniffiClonePointer(),
-                                                       FfiConverterTypeUpdate.lower(update), $0)
-        }
-    }
-}
-
-/// Magic number for the Rust proxy to call using the same mechanism as every other method,
-/// to free the callback once it's dropped by Rust.
-private let IDX_CALLBACK_FREE: Int32 = 0
-// Callback return codes
-private let UNIFFI_CALLBACK_SUCCESS: Int32 = 0
-private let UNIFFI_CALLBACK_ERROR: Int32 = 1
-private let UNIFFI_CALLBACK_UNEXPECTED_ERROR: Int32 = 2
-
-/// Put the implementation in a struct so we don't pollute the top-level namespace
-private enum UniffiCallbackInterfaceForeignPersister {
-    /// Create the VTable using a series of closures.
-    /// Swift automatically converts these into C callback functions.
-    static var vtable: UniffiVTableCallbackInterfaceForeignPersister = .init(
-        get: { (
-            uniffiHandle: UInt64,
-            index: UInt64,
-            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
-            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
-        ) in
-            let makeCall = {
-                () throws -> Update? in
-                guard let uniffiObj = try? FfiConverterTypeForeignPersister.handleMap.get(handle: uniffiHandle) else {
-                    throw UniffiInternalError.unexpectedStaleHandle
-                }
-                return try uniffiObj.get(
-                    index: FfiConverterUInt64.lift(index)
-                )
-            }
-
-            let writeReturn = { uniffiOutReturn.pointee = FfiConverterOptionTypeUpdate.lower($0) }
-            uniffiTraitInterfaceCallWithError(
-                callStatus: uniffiCallStatus,
-                makeCall: makeCall,
-                writeReturn: writeReturn,
-                lowerError: FfiConverterTypeLwkError.lower
-            )
-        },
-        push: { (
-            uniffiHandle: UInt64,
-            update: UnsafeMutableRawPointer,
-            _: UnsafeMutableRawPointer,
-            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
-        ) in
-            let makeCall = {
-                () throws in
-                guard let uniffiObj = try? FfiConverterTypeForeignPersister.handleMap.get(handle: uniffiHandle) else {
-                    throw UniffiInternalError.unexpectedStaleHandle
-                }
-                return try uniffiObj.push(
-                    update: FfiConverterTypeUpdate.lift(update)
-                )
-            }
-
-            let writeReturn = { () }
-            uniffiTraitInterfaceCallWithError(
-                callStatus: uniffiCallStatus,
-                makeCall: makeCall,
-                writeReturn: writeReturn,
-                lowerError: FfiConverterTypeLwkError.lower
-            )
-        },
-        uniffiFree: { (uniffiHandle: UInt64) in
-            let result = try? FfiConverterTypeForeignPersister.handleMap.remove(handle: uniffiHandle)
-            if result == nil {
-                print("Uniffi callback interface ForeignPersister: handle missing in uniffiFree")
-            }
-        }
-    )
-}
-
-private func uniffiCallbackInitForeignPersister() {
-    uniffi_lwk_fn_init_callback_vtable_foreignpersister(&UniffiCallbackInterfaceForeignPersister.vtable)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeForeignPersister: FfiConverter {
-    fileprivate static var handleMap = UniffiHandleMap<ForeignPersister>()
-
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = ForeignPersister
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> ForeignPersister {
-        return ForeignPersisterImpl(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: ForeignPersister) -> UnsafeMutableRawPointer {
-        guard let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: handleMap.insert(obj: value))) else {
-            fatalError("Cast to UnsafeMutableRawPointer failed")
-        }
-        return ptr
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ForeignPersister {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: ForeignPersister, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeForeignPersister_lift(_ pointer: UnsafeMutableRawPointer) throws -> ForeignPersister {
-    return try FfiConverterTypeForeignPersister.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeForeignPersister_lower(_ value: ForeignPersister) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeForeignPersister.lower(value)
-}
-
-/**
- * An object to define persistency at the caller level
- */
-public protocol ForeignPersisterLinkProtocol: AnyObject {}
-
-/**
- * An object to define persistency at the caller level
- */
-open class ForeignPersisterLink:
-    ForeignPersisterLinkProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_foreignpersisterlink(self.pointer, $0) }
-    }
-
-    /**
-     * Create a new `ForeignPersisterLink`
-     */
-    public convenience init(persister: ForeignPersister) {
-        let pointer =
-            try! rustCall {
-                uniffi_lwk_fn_constructor_foreignpersisterlink_new(
-                    FfiConverterTypeForeignPersister.lower(persister), $0
-                )
-            }
-        self.init(unsafeFromRawPointer: pointer)
-    }
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_foreignpersisterlink(pointer, $0) }
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeForeignPersisterLink: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = ForeignPersisterLink
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> ForeignPersisterLink {
-        return ForeignPersisterLink(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: ForeignPersisterLink) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ForeignPersisterLink {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: ForeignPersisterLink, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeForeignPersisterLink_lift(_ pointer: UnsafeMutableRawPointer) throws -> ForeignPersisterLink {
-    return try FfiConverterTypeForeignPersisterLink.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeForeignPersisterLink_lower(_ value: ForeignPersisterLink) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeForeignPersisterLink.lower(value)
-}
-
-/**
  * An FFI-safe key-value storage trait for caller-defined persistence.
  *
  * Keys are strings to allow namespacing (e.g., "Liquid:Tx:abcd1234").
@@ -5973,6 +5278,14 @@ open class ForeignStoreImpl:
         }
     }
 }
+
+/// Magic number for the Rust proxy to call using the same mechanism as every other method,
+/// to free the callback once it's dropped by Rust.
+private let IDX_CALLBACK_FREE: Int32 = 0
+// Callback return codes
+private let UNIFFI_CALLBACK_SUCCESS: Int32 = 0
+private let UNIFFI_CALLBACK_ERROR: Int32 = 1
+private let UNIFFI_CALLBACK_UNEXPECTED_ERROR: Int32 = 2
 
 /// Put the implementation in a struct so we don't pollute the top-level namespace
 private enum UniffiCallbackInterfaceForeignStore {
@@ -6681,217 +5994,6 @@ public func FfiConverterTypeIssuance_lower(_ value: Issuance) -> UnsafeMutableRa
 }
 
 /**
- * A secp256k1 keypair.
- *
- * See [`secp256k1::Keypair`] for more details.
- */
-public protocol KeypairProtocol: AnyObject {
-    /**
-     * Returns the `PublicKey`.
-     */
-    func publicKey() -> PublicKey
-
-    /**
-     * Returns the secret key bytes (32 bytes).
-     */
-    func secretBytes() -> Data
-
-    /**
-     * Returns the `SecretKey`.
-     */
-    func secretKey() -> SecretKey
-
-    /**
-     * Sign a 32-byte message hash using Schnorr signature.
-     */
-    func signSchnorr(msg: Hex) throws -> Hex
-
-    /**
-     * Returns the `XOnlyPublicKey`.
-     */
-    func xOnlyPublicKey() -> XOnlyPublicKey
-}
-
-/**
- * A secp256k1 keypair.
- *
- * See [`secp256k1::Keypair`] for more details.
- */
-open class Keypair:
-    KeypairProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_keypair(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_keypair(pointer, $0) }
-    }
-
-    /**
-     * See [`secp256k1::Keypair::from_seckey_slice`].
-     */
-    public static func fromSecretBytes(bytes: Data) throws -> Keypair {
-        return try FfiConverterTypeKeypair.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_keypair_from_secret_bytes(
-                FfiConverterData.lower(bytes), $0
-            )
-        })
-    }
-
-    /**
-     * Create a `Keypair` from a `SecretKey`.
-     */
-    public static func fromSecretKey(secretKey: SecretKey) -> Keypair {
-        return try! FfiConverterTypeKeypair.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_keypair_from_secret_key(
-                FfiConverterTypeSecretKey.lower(secretKey), $0
-            )
-        })
-    }
-
-    /**
-     * Generate a new random keypair.
-     */
-    public static func generate() -> Keypair {
-        return try! FfiConverterTypeKeypair.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_keypair_generate($0)
-        })
-    }
-
-    /**
-     * Returns the `PublicKey`.
-     */
-    open func publicKey() -> PublicKey {
-        return try! FfiConverterTypePublicKey.lift(try! rustCall {
-            uniffi_lwk_fn_method_keypair_public_key(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Returns the secret key bytes (32 bytes).
-     */
-    open func secretBytes() -> Data {
-        return try! FfiConverterData.lift(try! rustCall {
-            uniffi_lwk_fn_method_keypair_secret_bytes(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Returns the `SecretKey`.
-     */
-    open func secretKey() -> SecretKey {
-        return try! FfiConverterTypeSecretKey.lift(try! rustCall {
-            uniffi_lwk_fn_method_keypair_secret_key(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Sign a 32-byte message hash using Schnorr signature.
-     */
-    open func signSchnorr(msg: Hex) throws -> Hex {
-        return try FfiConverterTypeHex.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_keypair_sign_schnorr(self.uniffiClonePointer(),
-                                                      FfiConverterTypeHex.lower(msg), $0)
-        })
-    }
-
-    /**
-     * Returns the `XOnlyPublicKey`.
-     */
-    open func xOnlyPublicKey() -> XOnlyPublicKey {
-        return try! FfiConverterTypeXOnlyPublicKey.lift(try! rustCall {
-            uniffi_lwk_fn_method_keypair_x_only_public_key(self.uniffiClonePointer(), $0)
-        })
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeKeypair: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = Keypair
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Keypair {
-        return Keypair(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: Keypair) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Keypair {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: Keypair, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeKeypair_lift(_ pointer: UnsafeMutableRawPointer) throws -> Keypair {
-    return try FfiConverterTypeKeypair.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeKeypair_lower(_ value: Keypair) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeKeypair.lower(value)
-}
-
-/**
  * Represents a lightning payment (bolt11 invoice or bolt12 offer)
  */
 public protocol LightningPaymentProtocol: AnyObject {
@@ -7030,219 +6132,6 @@ public func FfiConverterTypeLightningPayment_lift(_ pointer: UnsafeMutableRawPoi
 #endif
 public func FfiConverterTypeLightningPayment_lower(_ value: LightningPayment) -> UnsafeMutableRawPointer {
     return FfiConverterTypeLightningPayment.lower(value)
-}
-
-/**
- * Transaction lock time.
- *
- * See [`elements::LockTime`] for more details.
- */
-public protocol LockTimeProtocol: AnyObject {
-    /**
-     * Return true if this lock time represents a block height.
-     *
-     * See [`elements::LockTime::is_block_height`].
-     */
-    func isBlockHeight() -> Bool
-
-    /**
-     * Return true if this lock time represents a Unix timestamp.
-     *
-     * See [`elements::LockTime::is_block_time`].
-     */
-    func isBlockTime() -> Bool
-
-    /**
-     * Return the consensus u32 value.
-     *
-     * See [`elements::LockTime::to_consensus_u32`].
-     */
-    func toConsensusU32() -> UInt32
-}
-
-/**
- * Transaction lock time.
- *
- * See [`elements::LockTime`] for more details.
- */
-open class LockTime:
-    LockTimeProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_locktime(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_locktime(pointer, $0) }
-    }
-
-    /**
-     * Create a LockTime from a consensus u32 value.
-     *
-     * See [`elements::LockTime::from_consensus`].
-     */
-    public static func fromConsensus(value: UInt32) -> LockTime {
-        return try! FfiConverterTypeLockTime.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_locktime_from_consensus(
-                FfiConverterUInt32.lower(value), $0
-            )
-        })
-    }
-
-    /**
-     * Create a LockTime from a block height.
-     *
-     * See [`elements::LockTime::from_height`].
-     */
-    public static func fromHeight(height: UInt32) throws -> LockTime {
-        return try FfiConverterTypeLockTime.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_locktime_from_height(
-                FfiConverterUInt32.lower(height), $0
-            )
-        })
-    }
-
-    /**
-     * Create a LockTime from a Unix timestamp.
-     *
-     * See [`elements::LockTime::from_time`].
-     */
-    public static func fromTime(time: UInt32) throws -> LockTime {
-        return try FfiConverterTypeLockTime.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_locktime_from_time(
-                FfiConverterUInt32.lower(time), $0
-            )
-        })
-    }
-
-    /**
-     * Create a LockTime with value zero (no lock time).
-     *
-     * See [`elements::LockTime::ZERO`].
-     */
-    public static func zero() -> LockTime {
-        return try! FfiConverterTypeLockTime.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_locktime_zero($0)
-        })
-    }
-
-    /**
-     * Return true if this lock time represents a block height.
-     *
-     * See [`elements::LockTime::is_block_height`].
-     */
-    open func isBlockHeight() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_locktime_is_block_height(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Return true if this lock time represents a Unix timestamp.
-     *
-     * See [`elements::LockTime::is_block_time`].
-     */
-    open func isBlockTime() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_locktime_is_block_time(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Return the consensus u32 value.
-     *
-     * See [`elements::LockTime::to_consensus_u32`].
-     */
-    open func toConsensusU32() -> UInt32 {
-        return try! FfiConverterUInt32.lift(try! rustCall {
-            uniffi_lwk_fn_method_locktime_to_consensus_u32(self.uniffiClonePointer(), $0)
-        })
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeLockTime: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = LockTime
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> LockTime {
-        return LockTime(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: LockTime) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LockTime {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: LockTime, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLockTime_lift(_ pointer: UnsafeMutableRawPointer) throws -> LockTime {
-    return try FfiConverterTypeLockTime.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLockTime_lower(_ value: LockTime) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeLockTime.lower(value)
 }
 
 public protocol LockupResponseProtocol: AnyObject {
@@ -9940,194 +8829,6 @@ public func FfiConverterTypePsetBalance_lower(_ value: PsetBalance) -> UnsafeMut
 }
 
 /**
- * Builder for constructing a PSET from scratch
- */
-public protocol PsetBuilderProtocol: AnyObject {
-    /**
-     * Add an input to this PSET
-     */
-    func addInput(input: PsetInput) throws
-
-    /**
-     * Add an output to this PSET
-     */
-    func addOutput(output: PsetOutput) throws
-
-    /**
-     * Blind the last output using the provided input secrets map
-     */
-    func blindLast(inpTxoutSec: [UInt32: TxOutSecrets]) throws
-
-    /**
-     * Build the Pset, consuming the builder
-     */
-    func build() throws -> Pset
-
-    /**
-     * Set the fallback locktime on the PSET global tx_data
-     */
-    func setFallbackLocktime(locktime: LockTime) throws
-}
-
-/**
- * Builder for constructing a PSET from scratch
- */
-open class PsetBuilder:
-    PsetBuilderProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_psetbuilder(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_psetbuilder(pointer, $0) }
-    }
-
-    /**
-     * Create a new PSET v2 builder
-     */
-    public static func newV2() -> PsetBuilder {
-        return try! FfiConverterTypePsetBuilder.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_psetbuilder_new_v2($0)
-        })
-    }
-
-    /**
-     * Add an input to this PSET
-     */
-    open func addInput(input: PsetInput) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetbuilder_add_input(self.uniffiClonePointer(),
-                                                       FfiConverterTypePsetInput.lower(input), $0)
-        }
-    }
-
-    /**
-     * Add an output to this PSET
-     */
-    open func addOutput(output: PsetOutput) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetbuilder_add_output(self.uniffiClonePointer(),
-                                                        FfiConverterTypePsetOutput.lower(output), $0)
-        }
-    }
-
-    /**
-     * Blind the last output using the provided input secrets map
-     */
-    open func blindLast(inpTxoutSec: [UInt32: TxOutSecrets]) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetbuilder_blind_last(self.uniffiClonePointer(),
-                                                        FfiConverterDictionaryUInt32TypeTxOutSecrets.lower(inpTxoutSec), $0)
-        }
-    }
-
-    /**
-     * Build the Pset, consuming the builder
-     */
-    open func build() throws -> Pset {
-        return try FfiConverterTypePset.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetbuilder_build(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Set the fallback locktime on the PSET global tx_data
-     */
-    open func setFallbackLocktime(locktime: LockTime) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetbuilder_set_fallback_locktime(self.uniffiClonePointer(),
-                                                                   FfiConverterTypeLockTime.lower(locktime), $0)
-        }
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypePsetBuilder: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = PsetBuilder
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> PsetBuilder {
-        return PsetBuilder(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: PsetBuilder) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PsetBuilder {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: PsetBuilder, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypePsetBuilder_lift(_ pointer: UnsafeMutableRawPointer) throws -> PsetBuilder {
-    return try FfiConverterTypePsetBuilder.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypePsetBuilder_lower(_ value: PsetBuilder) -> UnsafeMutableRawPointer {
-    return FfiConverterTypePsetBuilder.lower(value)
-}
-
-/**
  * The details of a Partially Signed Elements Transaction:
  *
  * - the net balance from the point of view of the wallet
@@ -10546,241 +9247,6 @@ public func FfiConverterTypePsetInput_lower(_ value: PsetInput) -> UnsafeMutable
 }
 
 /**
- * Builder for PSET inputs
- */
-public protocol PsetInputBuilderProtocol: AnyObject {
-    /**
-     * Set the blinded issuance flag.
-     */
-    func blindedIssuance(flag: Bool) throws
-
-    /**
-     * Build the PsetInput, consuming the builder.
-     */
-    func build() throws -> PsetInput
-
-    /**
-     * Set the issuance asset entropy.
-     */
-    func issuanceAssetEntropy(contractHash: ContractHash) throws
-
-    /**
-     * Set the issuance blinding nonce.
-     */
-    func issuanceBlindingNonce(nonce: Tweak) throws
-
-    /**
-     * Set the issuance inflation keys.
-     */
-    func issuanceInflationKeys(amount: UInt64) throws
-
-    /**
-     * Set the issuance value amount.
-     */
-    func issuanceValueAmount(amount: UInt64) throws
-
-    /**
-     * Set the sequence number.
-     */
-    func sequence(sequence: TxSequence) throws
-
-    /**
-     * Set the witness UTXO.
-     */
-    func witnessUtxo(utxo: TxOut) throws
-}
-
-/**
- * Builder for PSET inputs
- */
-open class PsetInputBuilder:
-    PsetInputBuilderProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_psetinputbuilder(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_psetinputbuilder(pointer, $0) }
-    }
-
-    /**
-     * Construct a PsetInputBuilder from an outpoint.
-     */
-    public static func fromPrevout(outpoint: OutPoint) -> PsetInputBuilder {
-        return try! FfiConverterTypePsetInputBuilder.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_psetinputbuilder_from_prevout(
-                FfiConverterTypeOutPoint.lower(outpoint), $0
-            )
-        })
-    }
-
-    /**
-     * Set the blinded issuance flag.
-     */
-    open func blindedIssuance(flag: Bool) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetinputbuilder_blinded_issuance(self.uniffiClonePointer(),
-                                                                   FfiConverterBool.lower(flag), $0)
-        }
-    }
-
-    /**
-     * Build the PsetInput, consuming the builder.
-     */
-    open func build() throws -> PsetInput {
-        return try FfiConverterTypePsetInput.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetinputbuilder_build(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Set the issuance asset entropy.
-     */
-    open func issuanceAssetEntropy(contractHash: ContractHash) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetinputbuilder_issuance_asset_entropy(self.uniffiClonePointer(),
-                                                                         FfiConverterTypeContractHash.lower(contractHash), $0)
-        }
-    }
-
-    /**
-     * Set the issuance blinding nonce.
-     */
-    open func issuanceBlindingNonce(nonce: Tweak) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetinputbuilder_issuance_blinding_nonce(self.uniffiClonePointer(),
-                                                                          FfiConverterTypeTweak.lower(nonce), $0)
-        }
-    }
-
-    /**
-     * Set the issuance inflation keys.
-     */
-    open func issuanceInflationKeys(amount: UInt64) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetinputbuilder_issuance_inflation_keys(self.uniffiClonePointer(),
-                                                                          FfiConverterUInt64.lower(amount), $0)
-        }
-    }
-
-    /**
-     * Set the issuance value amount.
-     */
-    open func issuanceValueAmount(amount: UInt64) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetinputbuilder_issuance_value_amount(self.uniffiClonePointer(),
-                                                                        FfiConverterUInt64.lower(amount), $0)
-        }
-    }
-
-    /**
-     * Set the sequence number.
-     */
-    open func sequence(sequence: TxSequence) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetinputbuilder_sequence(self.uniffiClonePointer(),
-                                                           FfiConverterTypeTxSequence.lower(sequence), $0)
-        }
-    }
-
-    /**
-     * Set the witness UTXO.
-     */
-    open func witnessUtxo(utxo: TxOut) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetinputbuilder_witness_utxo(self.uniffiClonePointer(),
-                                                               FfiConverterTypeTxOut.lower(utxo), $0)
-        }
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypePsetInputBuilder: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = PsetInputBuilder
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> PsetInputBuilder {
-        return PsetInputBuilder(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: PsetInputBuilder) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PsetInputBuilder {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: PsetInputBuilder, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypePsetInputBuilder_lift(_ pointer: UnsafeMutableRawPointer) throws -> PsetInputBuilder {
-    return try FfiConverterTypePsetInputBuilder.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypePsetInputBuilder_lower(_ value: PsetInputBuilder) -> UnsafeMutableRawPointer {
-    return FfiConverterTypePsetInputBuilder.lower(value)
-}
-
-/**
  * PSET output (read-only)
  */
 public protocol PsetOutputProtocol: AnyObject {
@@ -10941,213 +9407,6 @@ public func FfiConverterTypePsetOutput_lower(_ value: PsetOutput) -> UnsafeMutab
     return FfiConverterTypePsetOutput.lower(value)
 }
 
-/**
- * Builder for PSET outputs
- */
-public protocol PsetOutputBuilderProtocol: AnyObject {
-    /**
-     * Set the explicit asset ID.
-     */
-    func asset(asset: AssetId) throws
-
-    /**
-     * Set the blinder index.
-     */
-    func blinderIndex(index: UInt32) throws
-
-    /**
-     * Set the blinding public key.
-     */
-    func blindingPubkey(blindingKey: PublicKey) throws
-
-    /**
-     * Build the PsetOutput, consuming the builder.
-     */
-    func build() throws -> PsetOutput
-
-    /**
-     * Set the explicit amount.
-     */
-    func satoshi(satoshi: UInt64) throws
-
-    /**
-     * Set the script pubkey.
-     */
-    func scriptPubkey(scriptPubkey: Script) throws
-}
-
-/**
- * Builder for PSET outputs
- */
-open class PsetOutputBuilder:
-    PsetOutputBuilderProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_psetoutputbuilder(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_psetoutputbuilder(pointer, $0) }
-    }
-
-    /**
-     * Construct a PsetOutputBuilder with explicit asset and value.
-     */
-    public static func newExplicit(scriptPubkey: Script, satoshi: UInt64, asset: AssetId) -> PsetOutputBuilder {
-        return try! FfiConverterTypePsetOutputBuilder.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_psetoutputbuilder_new_explicit(
-                FfiConverterTypeScript.lower(scriptPubkey),
-                FfiConverterUInt64.lower(satoshi),
-                FfiConverterTypeAssetId.lower(asset), $0
-            )
-        })
-    }
-
-    /**
-     * Set the explicit asset ID.
-     */
-    open func asset(asset: AssetId) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetoutputbuilder_asset(self.uniffiClonePointer(),
-                                                         FfiConverterTypeAssetId.lower(asset), $0)
-        }
-    }
-
-    /**
-     * Set the blinder index.
-     */
-    open func blinderIndex(index: UInt32) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetoutputbuilder_blinder_index(self.uniffiClonePointer(),
-                                                                 FfiConverterUInt32.lower(index), $0)
-        }
-    }
-
-    /**
-     * Set the blinding public key.
-     */
-    open func blindingPubkey(blindingKey: PublicKey) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetoutputbuilder_blinding_pubkey(self.uniffiClonePointer(),
-                                                                   FfiConverterTypePublicKey.lower(blindingKey), $0)
-        }
-    }
-
-    /**
-     * Build the PsetOutput, consuming the builder.
-     */
-    open func build() throws -> PsetOutput {
-        return try FfiConverterTypePsetOutput.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetoutputbuilder_build(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Set the explicit amount.
-     */
-    open func satoshi(satoshi: UInt64) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetoutputbuilder_satoshi(self.uniffiClonePointer(),
-                                                           FfiConverterUInt64.lower(satoshi), $0)
-        }
-    }
-
-    /**
-     * Set the script pubkey.
-     */
-    open func scriptPubkey(scriptPubkey: Script) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_psetoutputbuilder_script_pubkey(self.uniffiClonePointer(),
-                                                                 FfiConverterTypeScript.lower(scriptPubkey), $0)
-        }
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypePsetOutputBuilder: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = PsetOutputBuilder
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> PsetOutputBuilder {
-        return PsetOutputBuilder(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: PsetOutputBuilder) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PsetOutputBuilder {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: PsetOutputBuilder, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypePsetOutputBuilder_lift(_ pointer: UnsafeMutableRawPointer) throws -> PsetOutputBuilder {
-    return try FfiConverterTypePsetOutputBuilder.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypePsetOutputBuilder_lower(_ value: PsetOutputBuilder) -> UnsafeMutableRawPointer {
-    return FfiConverterTypePsetOutputBuilder.lower(value)
-}
-
 public protocol PsetSignaturesProtocol: AnyObject {
     func hasSignature() -> [String: String]
 
@@ -11261,204 +9520,6 @@ public func FfiConverterTypePsetSignatures_lift(_ pointer: UnsafeMutableRawPoint
 #endif
 public func FfiConverterTypePsetSignatures_lower(_ value: PsetSignatures) -> UnsafeMutableRawPointer {
     return FfiConverterTypePsetSignatures.lower(value)
-}
-
-/**
- * A Bitcoin ECDSA public key.
- *
- * See [`elements::bitcoin::PublicKey`] for more details.
- */
-public protocol PublicKeyProtocol: AnyObject {
-    /**
-     * See [`elements::bitcoin::PublicKey::compressed`].
-     */
-    func isCompressed() -> Bool
-
-    /**
-     * See [`elements::bitcoin::PublicKey::to_bytes`].
-     */
-    func toBytes() -> Data
-
-    /**
-     * Returns the hex-encoded serialization.
-     */
-    func toHex() -> String
-
-    /**
-     * Converts to an x-only public key hex string.
-     */
-    func toXOnlyPublicKey() -> XOnlyPublicKey
-}
-
-/**
- * A Bitcoin ECDSA public key.
- *
- * See [`elements::bitcoin::PublicKey`] for more details.
- */
-open class PublicKey:
-    PublicKeyProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_publickey(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_publickey(pointer, $0) }
-    }
-
-    /**
-     * See [`elements::bitcoin::PublicKey::from_slice`].
-     */
-    public static func fromBytes(bytes: Data) throws -> PublicKey {
-        return try FfiConverterTypePublicKey.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_publickey_from_bytes(
-                FfiConverterData.lower(bytes), $0
-            )
-        })
-    }
-
-    /**
-     * Creates a `PublicKey` from a hex string.
-     */
-    public static func fromHex(hex: String) throws -> PublicKey {
-        return try FfiConverterTypePublicKey.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_publickey_from_hex(
-                FfiConverterString.lower(hex), $0
-            )
-        })
-    }
-
-    /**
-     * Derives a compressed `PublicKey` from a `SecretKey`.
-     */
-    public static func fromSecretKey(secretKey: SecretKey) -> PublicKey {
-        return try! FfiConverterTypePublicKey.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_publickey_from_secret_key(
-                FfiConverterTypeSecretKey.lower(secretKey), $0
-            )
-        })
-    }
-
-    /**
-     * See [`elements::bitcoin::PublicKey::compressed`].
-     */
-    open func isCompressed() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_publickey_is_compressed(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * See [`elements::bitcoin::PublicKey::to_bytes`].
-     */
-    open func toBytes() -> Data {
-        return try! FfiConverterData.lift(try! rustCall {
-            uniffi_lwk_fn_method_publickey_to_bytes(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Returns the hex-encoded serialization.
-     */
-    open func toHex() -> String {
-        return try! FfiConverterString.lift(try! rustCall {
-            uniffi_lwk_fn_method_publickey_to_hex(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Converts to an x-only public key hex string.
-     */
-    open func toXOnlyPublicKey() -> XOnlyPublicKey {
-        return try! FfiConverterTypeXOnlyPublicKey.lift(try! rustCall {
-            uniffi_lwk_fn_method_publickey_to_x_only_public_key(self.uniffiClonePointer(), $0)
-        })
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypePublicKey: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = PublicKey
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> PublicKey {
-        return PublicKey(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: PublicKey) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PublicKey {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: PublicKey, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypePublicKey_lift(_ pointer: UnsafeMutableRawPointer) throws -> PublicKey {
-    return try FfiConverterTypePublicKey.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypePublicKey_lower(_ value: PublicKey) -> UnsafeMutableRawPointer {
-    return FfiConverterTypePublicKey.lower(value)
 }
 
 /**
@@ -11756,6 +9817,13 @@ public protocol ScriptProtocol: AnyObject {
     func isProvablyUnspendable() -> Bool
 
     /**
+     * Returns SHA256 of the script's consensus bytes.
+     *
+     * Returns an equivalent value to the `jet::input_script_hash(index)`/`jet::output_script_hash(index)`.
+     */
+    func jetSha256Hex() -> Hex
+
+    /**
      * Return the string representation of the script showing op codes and their arguments.
      * For example: "OP_0 OP_PUSHBYTES_32 d2e99f0c38089c08e5e1080ff6658c6075afaa7699d384333d956c470881afde"
      */
@@ -11862,6 +9930,17 @@ open class Script:
     open func isProvablyUnspendable() -> Bool {
         return try! FfiConverterBool.lift(try! rustCall {
             uniffi_lwk_fn_method_script_is_provably_unspendable(self.uniffiClonePointer(), $0)
+        })
+    }
+
+    /**
+     * Returns SHA256 of the script's consensus bytes.
+     *
+     * Returns an equivalent value to the `jet::input_script_hash(index)`/`jet::output_script_hash(index)`.
+     */
+    open func jetSha256Hex() -> Hex {
+        return try! FfiConverterTypeHex.lift(try! rustCall {
+            uniffi_lwk_fn_method_script_jet_sha256_hex(self.uniffiClonePointer(), $0)
         })
     }
 
@@ -12740,324 +10819,6 @@ public func FfiConverterTypeTransaction_lower(_ value: Transaction) -> UnsafeMut
 }
 
 /**
- * Editor for modifying transactions.
- *
- * See [`elements::Transaction`] for more details.
- */
-public protocol TransactionEditorProtocol: AnyObject {
-    /**
-     * Build the transaction, consuming the editor.
-     */
-    func build() throws -> Transaction
-
-    /**
-     * Set the witness for a specific input.
-     */
-    func setInputWitness(inputIndex: UInt32, witness: TxInWitness) throws
-}
-
-/**
- * Editor for modifying transactions.
- *
- * See [`elements::Transaction`] for more details.
- */
-open class TransactionEditor:
-    TransactionEditorProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_transactioneditor(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_transactioneditor(pointer, $0) }
-    }
-
-    /**
-     * Create an editor from an existing transaction.
-     */
-    public static func fromTransaction(tx: Transaction) -> TransactionEditor {
-        return try! FfiConverterTypeTransactionEditor.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_transactioneditor_from_transaction(
-                FfiConverterTypeTransaction.lower(tx), $0
-            )
-        })
-    }
-
-    /**
-     * Build the transaction, consuming the editor.
-     */
-    open func build() throws -> Transaction {
-        return try FfiConverterTypeTransaction.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_transactioneditor_build(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Set the witness for a specific input.
-     */
-    open func setInputWitness(inputIndex: UInt32, witness: TxInWitness) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_transactioneditor_set_input_witness(self.uniffiClonePointer(),
-                                                                     FfiConverterUInt32.lower(inputIndex),
-                                                                     FfiConverterTypeTxInWitness.lower(witness), $0)
-        }
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeTransactionEditor: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = TransactionEditor
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> TransactionEditor {
-        return TransactionEditor(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: TransactionEditor) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TransactionEditor {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: TransactionEditor, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTransactionEditor_lift(_ pointer: UnsafeMutableRawPointer) throws -> TransactionEditor {
-    return try FfiConverterTypeTransactionEditor.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTransactionEditor_lower(_ value: TransactionEditor) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeTransactionEditor.lower(value)
-}
-
-/**
- * Represents a blinding factor/Tweak on secp256k1 curve
- *
- * See [`secp256k1_zkp::Tweak`] for more details.
- */
-public protocol TweakProtocol: AnyObject {
-    /**
-     * Return the bytes of the tweak (32 bytes).
-     */
-    func toBytes() -> Data
-
-    /**
-     * Return the hex representation of the tweak.
-     */
-    func toHex() -> String
-}
-
-/**
- * Represents a blinding factor/Tweak on secp256k1 curve
- *
- * See [`secp256k1_zkp::Tweak`] for more details.
- */
-open class Tweak:
-    TweakProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_tweak(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_tweak(pointer, $0) }
-    }
-
-    /**
-     * Create a Tweak from a 32-byte slice.
-     */
-    public static func fromBytes(bytes: Data) throws -> Tweak {
-        return try FfiConverterTypeTweak.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_tweak_from_bytes(
-                FfiConverterData.lower(bytes), $0
-            )
-        })
-    }
-
-    /**
-     * Create a Tweak from a hex string.
-     */
-    public static func fromHex(hex: String) throws -> Tweak {
-        return try FfiConverterTypeTweak.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_tweak_from_hex(
-                FfiConverterString.lower(hex), $0
-            )
-        })
-    }
-
-    /**
-     * Create the zero tweak.
-     */
-    public static func zero() -> Tweak {
-        return try! FfiConverterTypeTweak.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_tweak_zero($0)
-        })
-    }
-
-    /**
-     * Return the bytes of the tweak (32 bytes).
-     */
-    open func toBytes() -> Data {
-        return try! FfiConverterData.lift(try! rustCall {
-            uniffi_lwk_fn_method_tweak_to_bytes(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Return the hex representation of the tweak.
-     */
-    open func toHex() -> String {
-        return try! FfiConverterString.lift(try! rustCall {
-            uniffi_lwk_fn_method_tweak_to_hex(self.uniffiClonePointer(), $0)
-        })
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeTweak: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = Tweak
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Tweak {
-        return Tweak(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: Tweak) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Tweak {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: Tweak, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTweak_lift(_ pointer: UnsafeMutableRawPointer) throws -> Tweak {
-    return try FfiConverterTypeTweak.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTweak_lower(_ value: Tweak) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeTweak.lower(value)
-}
-
-/**
  * Wrapper over [`lwk_wollet::TxBuilder`]
  */
 public protocol TxBuilderProtocol: AnyObject {
@@ -13520,11 +11281,6 @@ public protocol TxInProtocol: AnyObject {
      * Get the sequence number for this input.
      */
     func sequence() -> UInt32
-
-    /**
-     * Get the witness for this input.
-     */
-    func witness() -> TxInWitness
 }
 
 /**
@@ -13596,15 +11352,6 @@ open class TxIn:
             uniffi_lwk_fn_method_txin_sequence(self.uniffiClonePointer(), $0)
         })
     }
-
-    /**
-     * Get the witness for this input.
-     */
-    open func witness() -> TxInWitness {
-        return try! FfiConverterTypeTxInWitness.lift(try! rustCall {
-            uniffi_lwk_fn_method_txin_witness(self.uniffiClonePointer(), $0)
-        })
-    }
 }
 
 #if swift(>=5.8)
@@ -13652,361 +11399,6 @@ public func FfiConverterTypeTxIn_lift(_ pointer: UnsafeMutableRawPointer) throws
 #endif
 public func FfiConverterTypeTxIn_lower(_ value: TxIn) -> UnsafeMutableRawPointer {
     return FfiConverterTypeTxIn.lower(value)
-}
-
-/**
- * A transaction input witness.
- */
-public protocol TxInWitnessProtocol: AnyObject {
-    /**
-     * Check if the witness is empty.
-     */
-    func isEmpty() -> Bool
-
-    /**
-     * Get the peg-in witness elements.
-     */
-    func peginWitness() -> [Hex]
-
-    /**
-     * Get the script witness elements.
-     */
-    func scriptWitness() -> [Hex]
-}
-
-/**
- * A transaction input witness.
- */
-open class TxInWitness:
-    TxInWitnessProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_txinwitness(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_txinwitness(pointer, $0) }
-    }
-
-    /**
-     * Create an empty witness.
-     */
-    public static func empty() -> TxInWitness {
-        return try! FfiConverterTypeTxInWitness.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txinwitness_empty($0)
-        })
-    }
-
-    /**
-     * Create a witness from script witness elements.
-     */
-    public static func fromScriptWitness(scriptWitness: [Hex]) -> TxInWitness {
-        return try! FfiConverterTypeTxInWitness.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txinwitness_from_script_witness(
-                FfiConverterSequenceTypeHex.lower(scriptWitness), $0
-            )
-        })
-    }
-
-    /**
-     * Check if the witness is empty.
-     */
-    open func isEmpty() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_txinwitness_is_empty(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Get the peg-in witness elements.
-     */
-    open func peginWitness() -> [Hex] {
-        return try! FfiConverterSequenceTypeHex.lift(try! rustCall {
-            uniffi_lwk_fn_method_txinwitness_pegin_witness(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Get the script witness elements.
-     */
-    open func scriptWitness() -> [Hex] {
-        return try! FfiConverterSequenceTypeHex.lift(try! rustCall {
-            uniffi_lwk_fn_method_txinwitness_script_witness(self.uniffiClonePointer(), $0)
-        })
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeTxInWitness: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = TxInWitness
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> TxInWitness {
-        return TxInWitness(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: TxInWitness) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TxInWitness {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: TxInWitness, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTxInWitness_lift(_ pointer: UnsafeMutableRawPointer) throws -> TxInWitness {
-    return try FfiConverterTypeTxInWitness.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTxInWitness_lower(_ value: TxInWitness) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeTxInWitness.lower(value)
-}
-
-/**
- * Builder for creating a TxInWitness.
- */
-public protocol TxInWitnessBuilderProtocol: AnyObject {
-    /**
-     * Set the amount rangeproof from serialized bytes.
-     */
-    func amountRangeproof(proof: Hex) throws
-
-    /**
-     * Build the TxInWitness.
-     */
-    func build() throws -> TxInWitness
-
-    /**
-     * Set the inflation keys rangeproof from serialized bytes.
-     */
-    func inflationKeysRangeproof(proof: Hex) throws
-
-    /**
-     * Set the peg-in witness elements.
-     */
-    func peginWitness(witness: [Hex]) throws
-
-    /**
-     * Set the script witness elements.
-     */
-    func scriptWitness(witness: [Hex]) throws
-}
-
-/**
- * Builder for creating a TxInWitness.
- */
-open class TxInWitnessBuilder:
-    TxInWitnessBuilderProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_txinwitnessbuilder(self.pointer, $0) }
-    }
-
-    /**
-     * Create a new witness builder.
-     */
-    public convenience init() {
-        let pointer =
-            try! rustCall {
-                uniffi_lwk_fn_constructor_txinwitnessbuilder_new($0)
-            }
-        self.init(unsafeFromRawPointer: pointer)
-    }
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_txinwitnessbuilder(pointer, $0) }
-    }
-
-    /**
-     * Set the amount rangeproof from serialized bytes.
-     */
-    open func amountRangeproof(proof: Hex) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_txinwitnessbuilder_amount_rangeproof(self.uniffiClonePointer(),
-                                                                      FfiConverterTypeHex.lower(proof), $0)
-        }
-    }
-
-    /**
-     * Build the TxInWitness.
-     */
-    open func build() throws -> TxInWitness {
-        return try FfiConverterTypeTxInWitness.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_txinwitnessbuilder_build(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Set the inflation keys rangeproof from serialized bytes.
-     */
-    open func inflationKeysRangeproof(proof: Hex) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_txinwitnessbuilder_inflation_keys_rangeproof(self.uniffiClonePointer(),
-                                                                              FfiConverterTypeHex.lower(proof), $0)
-        }
-    }
-
-    /**
-     * Set the peg-in witness elements.
-     */
-    open func peginWitness(witness: [Hex]) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_txinwitnessbuilder_pegin_witness(self.uniffiClonePointer(),
-                                                                  FfiConverterSequenceTypeHex.lower(witness), $0)
-        }
-    }
-
-    /**
-     * Set the script witness elements.
-     */
-    open func scriptWitness(witness: [Hex]) throws {
-        try rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_method_txinwitnessbuilder_script_witness(self.uniffiClonePointer(),
-                                                                   FfiConverterSequenceTypeHex.lower(witness), $0)
-        }
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeTxInWitnessBuilder: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = TxInWitnessBuilder
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> TxInWitnessBuilder {
-        return TxInWitnessBuilder(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: TxInWitnessBuilder) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TxInWitnessBuilder {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: TxInWitnessBuilder, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTxInWitnessBuilder_lift(_ pointer: UnsafeMutableRawPointer) throws -> TxInWitnessBuilder {
-    return try FfiConverterTypeTxInWitnessBuilder.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTxInWitnessBuilder_lower(_ value: TxInWitnessBuilder) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeTxInWitnessBuilder.lower(value)
 }
 
 /**
@@ -14246,11 +11638,6 @@ public protocol TxOutSecretsProtocol: AnyObject {
     func assetBf() -> Hex
 
     /**
-     * Return the asset blinding factor.
-     */
-    func assetBlindingFactor() -> AssetBlindingFactor
-
-    /**
      * Get the asset commitment
      *
      * If the output is explicit, returns the empty string
@@ -14273,11 +11660,6 @@ public protocol TxOutSecretsProtocol: AnyObject {
      * Deprecated: use `value_blinding_factor()` instead.
      */
     func valueBf() -> Hex
-
-    /**
-     * Return the value blinding factor.
-     */
-    func valueBlindingFactor() -> ValueBlindingFactor
 
     /**
      * Get the value commitment
@@ -14329,21 +11711,7 @@ open class TxOutSecrets:
         return try! rustCall { uniffi_lwk_fn_clone_txoutsecrets(self.pointer, $0) }
     }
 
-    /**
-     * Create TxOutSecrets with explicit blinding factors.
-     */
-    public convenience init(assetId: AssetId, assetBf: AssetBlindingFactor, value: UInt64, valueBf: ValueBlindingFactor) {
-        let pointer =
-            try! rustCall {
-                uniffi_lwk_fn_constructor_txoutsecrets_new(
-                    FfiConverterTypeAssetId.lower(assetId),
-                    FfiConverterTypeAssetBlindingFactor.lower(assetBf),
-                    FfiConverterUInt64.lower(value),
-                    FfiConverterTypeValueBlindingFactor.lower(valueBf), $0
-                )
-            }
-        self.init(unsafeFromRawPointer: pointer)
-    }
+    // No primary constructor declared for this class.
 
     deinit {
         guard let pointer = pointer else {
@@ -14351,18 +11719,6 @@ open class TxOutSecrets:
         }
 
         try! rustCall { uniffi_lwk_fn_free_txoutsecrets(pointer, $0) }
-    }
-
-    /**
-     * Create TxOutSecrets from explicit (unblinded) values.
-     */
-    public static func fromExplicit(assetId: AssetId, value: UInt64) -> TxOutSecrets {
-        return try! FfiConverterTypeTxOutSecrets.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txoutsecrets_from_explicit(
-                FfiConverterTypeAssetId.lower(assetId),
-                FfiConverterUInt64.lower(value), $0
-            )
-        })
     }
 
     /**
@@ -14382,15 +11738,6 @@ open class TxOutSecrets:
     open func assetBf() -> Hex {
         return try! FfiConverterTypeHex.lift(try! rustCall {
             uniffi_lwk_fn_method_txoutsecrets_asset_bf(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Return the asset blinding factor.
-     */
-    open func assetBlindingFactor() -> AssetBlindingFactor {
-        return try! FfiConverterTypeAssetBlindingFactor.lift(try! rustCall {
-            uniffi_lwk_fn_method_txoutsecrets_asset_blinding_factor(self.uniffiClonePointer(), $0)
         })
     }
 
@@ -14431,15 +11778,6 @@ open class TxOutSecrets:
     open func valueBf() -> Hex {
         return try! FfiConverterTypeHex.lift(try! rustCall {
             uniffi_lwk_fn_method_txoutsecrets_value_bf(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Return the value blinding factor.
-     */
-    open func valueBlindingFactor() -> ValueBlindingFactor {
-        return try! FfiConverterTypeValueBlindingFactor.lift(try! rustCall {
-            uniffi_lwk_fn_method_txoutsecrets_value_blinding_factor(self.uniffiClonePointer(), $0)
         })
     }
 
@@ -14500,304 +11838,6 @@ public func FfiConverterTypeTxOutSecrets_lift(_ pointer: UnsafeMutableRawPointer
 #endif
 public func FfiConverterTypeTxOutSecrets_lower(_ value: TxOutSecrets) -> UnsafeMutableRawPointer {
     return FfiConverterTypeTxOutSecrets.lower(value)
-}
-
-/**
- * Transaction input sequence number.
- *
- * See [`elements::Sequence`] for more details.
- */
-public protocol TxSequenceProtocol: AnyObject {
-    /**
-     * See [`elements::Sequence::enables_absolute_lock_time`].
-     */
-    func enablesAbsoluteLockTime() -> Bool
-
-    /**
-     * See [`elements::Sequence::is_final`].
-     */
-    func isFinal() -> Bool
-
-    /**
-     * See [`elements::Sequence::is_height_locked`].
-     */
-    func isHeightLocked() -> Bool
-
-    /**
-     * See [`elements::Sequence::is_rbf`].
-     */
-    func isRbf() -> Bool
-
-    /**
-     * See [`elements::Sequence::is_relative_lock_time`].
-     */
-    func isRelativeLockTime() -> Bool
-
-    /**
-     * See [`elements::Sequence::is_time_locked`].
-     */
-    func isTimeLocked() -> Bool
-
-    /**
-     * See [`elements::Sequence::to_consensus_u32`].
-     */
-    func toConsensusU32() -> UInt32
-}
-
-/**
- * Transaction input sequence number.
- *
- * See [`elements::Sequence`] for more details.
- */
-open class TxSequence:
-    TxSequenceProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_txsequence(self.pointer, $0) }
-    }
-
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_txsequence(pointer, $0) }
-    }
-
-    /**
-     * See [`elements::Sequence::ENABLE_LOCKTIME_NO_RBF`].
-     */
-    public static func enableLocktimeNoRbf() -> TxSequence {
-        return try! FfiConverterTypeTxSequence.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txsequence_enable_locktime_no_rbf($0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::ENABLE_RBF_NO_LOCKTIME`].
-     */
-    public static func enableRbfNoLocktime() -> TxSequence {
-        return try! FfiConverterTypeTxSequence.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txsequence_enable_rbf_no_locktime($0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::from_512_second_intervals`].
-     */
-    public static func from512SecondIntervals(intervals: UInt16) -> TxSequence {
-        return try! FfiConverterTypeTxSequence.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txsequence_from_512_second_intervals(
-                FfiConverterUInt16.lower(intervals), $0
-            )
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::from_consensus`].
-     */
-    public static func fromConsensus(value: UInt32) -> TxSequence {
-        return try! FfiConverterTypeTxSequence.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txsequence_from_consensus(
-                FfiConverterUInt32.lower(value), $0
-            )
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::from_height`].
-     */
-    public static func fromHeight(height: UInt16) -> TxSequence {
-        return try! FfiConverterTypeTxSequence.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txsequence_from_height(
-                FfiConverterUInt16.lower(height), $0
-            )
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::from_seconds_ceil`].
-     */
-    public static func fromSecondsCeil(seconds: UInt32) throws -> TxSequence {
-        return try FfiConverterTypeTxSequence.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_txsequence_from_seconds_ceil(
-                FfiConverterUInt32.lower(seconds), $0
-            )
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::from_seconds_floor`].
-     */
-    public static func fromSecondsFloor(seconds: UInt32) throws -> TxSequence {
-        return try FfiConverterTypeTxSequence.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_txsequence_from_seconds_floor(
-                FfiConverterUInt32.lower(seconds), $0
-            )
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::MAX`].
-     */
-    public static func max() -> TxSequence {
-        return try! FfiConverterTypeTxSequence.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txsequence_max($0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::ZERO`].
-     */
-    public static func zero() -> TxSequence {
-        return try! FfiConverterTypeTxSequence.lift(try! rustCall {
-            uniffi_lwk_fn_constructor_txsequence_zero($0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::enables_absolute_lock_time`].
-     */
-    open func enablesAbsoluteLockTime() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_txsequence_enables_absolute_lock_time(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::is_final`].
-     */
-    open func isFinal() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_txsequence_is_final(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::is_height_locked`].
-     */
-    open func isHeightLocked() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_txsequence_is_height_locked(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::is_rbf`].
-     */
-    open func isRbf() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_txsequence_is_rbf(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::is_relative_lock_time`].
-     */
-    open func isRelativeLockTime() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_txsequence_is_relative_lock_time(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::is_time_locked`].
-     */
-    open func isTimeLocked() -> Bool {
-        return try! FfiConverterBool.lift(try! rustCall {
-            uniffi_lwk_fn_method_txsequence_is_time_locked(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * See [`elements::Sequence::to_consensus_u32`].
-     */
-    open func toConsensusU32() -> UInt32 {
-        return try! FfiConverterUInt32.lift(try! rustCall {
-            uniffi_lwk_fn_method_txsequence_to_consensus_u32(self.uniffiClonePointer(), $0)
-        })
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeTxSequence: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = TxSequence
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> TxSequence {
-        return TxSequence(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: TxSequence) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TxSequence {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: TxSequence, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTxSequence_lift(_ pointer: UnsafeMutableRawPointer) throws -> TxSequence {
-    return try FfiConverterTypeTxSequence.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeTxSequence_lower(_ value: TxSequence) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeTxSequence.lower(value)
 }
 
 /**
@@ -16366,14 +13406,14 @@ open class Wollet:
     }
 
     /**
-     * Construct a Watch-Only wallet object with a caller provided persister
+     * Construct a Watch-Only wallet object with a caller provided store
      */
-    public static func withCustomPersister(network: Network, descriptor: WolletDescriptor, persister: ForeignPersisterLink) throws -> Wollet {
+    public static func withCustomStore(network: Network, descriptor: WolletDescriptor, store: ForeignStoreLink) throws -> Wollet {
         return try FfiConverterTypeWollet.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_wollet_with_custom_persister(
+            uniffi_lwk_fn_constructor_wollet_with_custom_store(
                 FfiConverterTypeNetwork.lower(network),
                 FfiConverterTypeWolletDescriptor.lower(descriptor),
-                FfiConverterTypeForeignPersisterLink.lower(persister), $0
+                FfiConverterTypeForeignStoreLink.lower(store), $0
             )
         })
     }
@@ -16847,163 +13887,6 @@ public func FfiConverterTypeWolletDescriptor_lift(_ pointer: UnsafeMutableRawPoi
 #endif
 public func FfiConverterTypeWolletDescriptor_lower(_ value: WolletDescriptor) -> UnsafeMutableRawPointer {
     return FfiConverterTypeWolletDescriptor.lower(value)
-}
-
-/**
- * An x-only public key, used for verification of Taproot signatures
- * and serialized according to BIP-340.
- */
-public protocol XOnlyPublicKeyProtocol: AnyObject {
-    /**
-     * Serialize to 32 bytes.
-     */
-    func bytes() -> Data
-
-    /**
-     * Get hex representation of the x-only public key
-     */
-    func toHex() -> String
-}
-
-/**
- * An x-only public key, used for verification of Taproot signatures
- * and serialized according to BIP-340.
- */
-open class XOnlyPublicKey:
-    XOnlyPublicKeyProtocol
-{
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    // Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public init(noPointer _: NoPointer) {
-        pointer = nil
-    }
-
-    #if swift(>=5.8)
-        @_documentation(visibility: private)
-    #endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_lwk_fn_clone_xonlypublickey(self.pointer, $0) }
-    }
-
-    /**
-     * Create from a hex string (64 hex characters = 32 bytes).
-     */
-    public convenience init(hex: String) throws {
-        let pointer =
-            try rustCallWithError(FfiConverterTypeLwkError.lift) {
-                uniffi_lwk_fn_constructor_xonlypublickey_new(
-                    FfiConverterString.lower(hex), $0
-                )
-            }
-        self.init(unsafeFromRawPointer: pointer)
-    }
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_lwk_fn_free_xonlypublickey(pointer, $0) }
-    }
-
-    /**
-     * Create from raw bytes (32 bytes).
-     */
-    public static func fromSlice(bytes: Data) throws -> XOnlyPublicKey {
-        return try FfiConverterTypeXOnlyPublicKey.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-            uniffi_lwk_fn_constructor_xonlypublickey_from_slice(
-                FfiConverterData.lower(bytes), $0
-            )
-        })
-    }
-
-    /**
-     * Serialize to 32 bytes.
-     */
-    open func bytes() -> Data {
-        return try! FfiConverterData.lift(try! rustCall {
-            uniffi_lwk_fn_method_xonlypublickey_bytes(self.uniffiClonePointer(), $0)
-        })
-    }
-
-    /**
-     * Get hex representation of the x-only public key
-     */
-    open func toHex() -> String {
-        return try! FfiConverterString.lift(try! rustCall {
-            uniffi_lwk_fn_method_xonlypublickey_to_hex(self.uniffiClonePointer(), $0)
-        })
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeXOnlyPublicKey: FfiConverter {
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = XOnlyPublicKey
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> XOnlyPublicKey {
-        return XOnlyPublicKey(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: XOnlyPublicKey) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> XOnlyPublicKey {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if ptr == nil {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: XOnlyPublicKey, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeXOnlyPublicKey_lift(_ pointer: UnsafeMutableRawPointer) throws -> XOnlyPublicKey {
-    return try FfiConverterTypeXOnlyPublicKey.lift(pointer)
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-public func FfiConverterTypeXOnlyPublicKey_lower(_ value: XOnlyPublicKey) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeXOnlyPublicKey.lower(value)
 }
 
 /**
@@ -19005,57 +15888,6 @@ private struct FfiConverterSequenceTypeAssetId: FfiConverterRustBuffer {
 #if swift(>=5.8)
     @_documentation(visibility: private)
 #endif
-private struct FfiConverterSequenceTypeHex: FfiConverterRustBuffer {
-    typealias SwiftType = [Hex]
-
-    static func write(_ value: [Hex], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterTypeHex.write(item, into: &buf)
-        }
-    }
-
-    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Hex] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [Hex]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            try seq.append(FfiConverterTypeHex.read(from: &buf))
-        }
-        return seq
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-private struct FfiConverterDictionaryUInt32TypeTxOutSecrets: FfiConverterRustBuffer {
-    static func write(_ value: [UInt32: TxOutSecrets], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for (key, value) in value {
-            FfiConverterUInt32.write(key, into: &buf)
-            FfiConverterTypeTxOutSecrets.write(value, into: &buf)
-        }
-    }
-
-    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [UInt32: TxOutSecrets] {
-        let len: Int32 = try readInt(&buf)
-        var dict = [UInt32: TxOutSecrets]()
-        dict.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            let key = try FfiConverterUInt32.read(from: &buf)
-            let value = try FfiConverterTypeTxOutSecrets.read(from: &buf)
-            dict[key] = value
-        }
-        return dict
-    }
-}
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
 private struct FfiConverterDictionaryStringString: FfiConverterRustBuffer {
     static func write(_ value: [String: String], into buf: inout [UInt8]) {
         let len = Int32(value.count)
@@ -19214,29 +16046,6 @@ public func FfiConverterTypeHex_lower(_ value: Hex) -> RustBuffer {
 }
 
 /**
- * Compute the asset ID from an issuance outpoint and contract hash.
- */
-public func assetIdFromIssuance(outpoint: OutPoint, contractHash: ContractHash) -> AssetId {
-    return try! FfiConverterTypeAssetId.lift(try! rustCall {
-        uniffi_lwk_fn_func_asset_id_from_issuance(
-            FfiConverterTypeOutPoint.lower(outpoint),
-            FfiConverterTypeContractHash.lower(contractHash), $0
-        )
-    })
-}
-
-/**
- * TODO: delete when AssetId is refactored as uniffi::Object.
- */
-public func assetIdInnerHex(assetId: AssetId) -> Hex {
-    return try! FfiConverterTypeHex.lift(try! rustCall {
-        uniffi_lwk_fn_func_asset_id_inner_hex(
-            FfiConverterTypeAssetId.lower(assetId), $0
-        )
-    })
-}
-
-/**
  * Derive asset id from contract and transaction input
  */
 public func deriveAssetId(txin: TxIn, contract: Contract) throws -> AssetId {
@@ -19261,18 +16070,6 @@ public func deriveTokenId(txin: TxIn, contract: Contract) throws -> AssetId {
 }
 
 /**
- * Generate the asset entropy from the issuance prevout and the contract hash.
- */
-public func generateAssetEntropy(outpoint: OutPoint, contractHash: ContractHash) throws -> ContractHash {
-    return try FfiConverterTypeContractHash.lift(rustCallWithError(FfiConverterTypeLwkError.lift) {
-        uniffi_lwk_fn_func_generate_asset_entropy(
-            FfiConverterTypeOutPoint.lower(outpoint),
-            FfiConverterTypeContractHash.lower(contractHash), $0
-        )
-    })
-}
-
-/**
  * Whether a script pubkey is provably segwit
  */
 public func isProvablySegwit(scriptPubkey: Script, redeemScript: Script?) -> Bool {
@@ -19280,19 +16077,6 @@ public func isProvablySegwit(scriptPubkey: Script, redeemScript: Script?) -> Boo
         uniffi_lwk_fn_func_is_provably_segwit(
             FfiConverterTypeScript.lower(scriptPubkey),
             FfiConverterOptionTypeScript.lower(redeemScript), $0
-        )
-    })
-}
-
-/**
- * Compute the reissuance token ID from an issuance outpoint and contract hash.
- */
-public func reissuanceTokenFromIssuance(outpoint: OutPoint, contractHash: ContractHash, isConfidential: Bool) -> AssetId {
-    return try! FfiConverterTypeAssetId.lift(try! rustCall {
-        uniffi_lwk_fn_func_reissuance_token_from_issuance(
-            FfiConverterTypeOutPoint.lower(outpoint),
-            FfiConverterTypeContractHash.lower(contractHash),
-            FfiConverterBool.lower(isConfidential), $0
         )
     })
 }
@@ -19313,25 +16097,13 @@ private var initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if uniffi_lwk_checksum_func_asset_id_from_issuance() != 54417 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_func_asset_id_inner_hex() != 8104 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_func_derive_asset_id() != 63625 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_func_derive_token_id() != 30312 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_func_generate_asset_entropy() != 10603 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_func_is_provably_segwit() != 18100 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_func_reissuance_token_from_issuance() != 46684 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_method_address_is_blinded() != 13572 {
@@ -19598,27 +16370,6 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_boltzsession_swap_restore() != 45430 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_contracthash_to_bytes() != 62085 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_contracthash_to_hex() != 8878 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_controlblock_internal_key() != 53435 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_controlblock_leaf_version() != 27936 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_controlblock_output_key_parity() != 27733 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_controlblock_serialize() != 970 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_controlblock_size() != 62655 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_method_currencycode_alpha3() != 23143 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -19656,12 +16407,6 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_method_esploraclient_tip() != 31289 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_foreignpersister_get() != 44321 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_foreignpersister_push() != 2778 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_method_foreignstore_get() != 36300 {
@@ -19727,31 +16472,7 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_issuance_token_satoshi() != 60126 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_keypair_public_key() != 1172 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_keypair_secret_bytes() != 23251 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_keypair_secret_key() != 206 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_keypair_sign_schnorr() != 30281 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_keypair_x_only_public_key() != 53622 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_method_lightningpayment_bolt11_invoice() != 41990 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_locktime_is_block_height() != 65052 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_locktime_is_block_time() != 28524 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_locktime_to_consensus_u32() != 52339 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_method_lockupresponse_advance() != 46331 {
@@ -19958,21 +16679,6 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_psetbalance_recipients() != 28110 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_psetbuilder_add_input() != 39455 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetbuilder_add_output() != 22866 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetbuilder_blind_last() != 30185 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetbuilder_build() != 16153 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetbuilder_set_fallback_locktime() != 60412 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_method_psetdetails_balance() != 59666 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -20015,30 +16721,6 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_psetinput_sighash() != 46072 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_psetinputbuilder_blinded_issuance() != 25850 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetinputbuilder_build() != 52402 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetinputbuilder_issuance_asset_entropy() != 55489 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetinputbuilder_issuance_blinding_nonce() != 15447 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetinputbuilder_issuance_inflation_keys() != 49865 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetinputbuilder_issuance_value_amount() != 59369 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetinputbuilder_sequence() != 53916 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetinputbuilder_witness_utxo() != 11854 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_method_psetoutput_amount() != 6432 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -20051,40 +16733,10 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_psetoutput_script_pubkey() != 20311 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_psetoutputbuilder_asset() != 22297 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetoutputbuilder_blinder_index() != 59028 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetoutputbuilder_blinding_pubkey() != 18269 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetoutputbuilder_build() != 47223 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetoutputbuilder_satoshi() != 39760 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_psetoutputbuilder_script_pubkey() != 57593 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_method_psetsignatures_has_signature() != 62742 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_method_psetsignatures_missing_signature() != 6208 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_publickey_is_compressed() != 65404 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_publickey_to_bytes() != 15021 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_publickey_to_hex() != 51583 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_publickey_to_x_only_public_key() != 13897 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_method_quotebuilder_build() != 23099 {
@@ -20112,6 +16764,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_method_script_is_provably_unspendable() != 12490 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_lwk_checksum_method_script_jet_sha256_hex() != 5565 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_method_script_to_asm() != 32896 {
@@ -20174,18 +16829,6 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_transaction_verify_tx_amt_proofs() != 19352 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_transactioneditor_build() != 38997 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_transactioneditor_set_input_witness() != 38526 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_tweak_to_bytes() != 39465 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_tweak_to_hex() != 39757 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_method_txbuilder_add_burn() != 9804 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -20240,33 +16883,6 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_txin_sequence() != 13353 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_txin_witness() != 33410 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txinwitness_is_empty() != 36793 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txinwitness_pegin_witness() != 53726 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txinwitness_script_witness() != 156 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txinwitnessbuilder_amount_rangeproof() != 11974 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txinwitnessbuilder_build() != 16272 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txinwitnessbuilder_inflation_keys_rangeproof() != 49201 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txinwitnessbuilder_pegin_witness() != 54096 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txinwitnessbuilder_script_witness() != 28571 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_method_txout_asset() != 43008 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -20294,9 +16910,6 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_txoutsecrets_asset_bf() != 3179 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_txoutsecrets_asset_blinding_factor() != 54796 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_method_txoutsecrets_asset_commitment() != 16600 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -20309,31 +16922,7 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_txoutsecrets_value_bf() != 58526 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_txoutsecrets_value_blinding_factor() != 60090 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_method_txoutsecrets_value_commitment() != 41762 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txsequence_enables_absolute_lock_time() != 30130 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txsequence_is_final() != 57034 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txsequence_is_height_locked() != 20908 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txsequence_is_rbf() != 17358 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txsequence_is_relative_lock_time() != 62094 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txsequence_is_time_locked() != 603 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_txsequence_to_consensus_u32() != 50940 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_method_txid_bytes() != 6953 {
@@ -20492,12 +17081,6 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_method_wolletdescriptor_url_encoded_descriptor() != 21106 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_method_xonlypublickey_bytes() != 5654 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_method_xonlypublickey_to_hex() != 64519 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_constructor_address_new() != 52129 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -20558,15 +17141,6 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_constructor_contract_new() != 55905 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_constructor_contracthash_from_bytes() != 34325 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_contracthash_from_hex() != 48997 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_controlblock_from_slice() != 63668 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_constructor_currencycode_new() != 9828 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -20588,37 +17162,13 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_constructor_externalutxo_new() != 40531 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_constructor_foreignpersisterlink_new() != 48168 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_constructor_foreignstorelink_new() != 29701 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_keypair_from_secret_bytes() != 50172 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_keypair_from_secret_key() != 9040 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_keypair_generate() != 3219 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_constructor_lightningpayment_from_bolt11_invoice() != 15133 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_constructor_lightningpayment_new() != 20178 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_locktime_from_consensus() != 43807 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_locktime_from_height() != 40264 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_locktime_from_time() != 24713 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_locktime_zero() != 59947 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_constructor_logginglink_new() != 31235 {
@@ -20675,24 +17225,6 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_constructor_pset_new() != 61694 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_constructor_psetbuilder_new_v2() != 37465 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_psetinputbuilder_from_prevout() != 43066 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_psetoutputbuilder_new_explicit() != 12031 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_publickey_from_bytes() != 37816 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_publickey_from_hex() != 15725 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_publickey_from_secret_key() != 29354 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_constructor_script_empty() != 47087 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -20717,64 +17249,10 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_constructor_transaction_new() != 22016 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_constructor_transactioneditor_from_transaction() != 30329 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_tweak_from_bytes() != 35375 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_tweak_from_hex() != 10233 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_tweak_zero() != 48411 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_constructor_txbuilder_new() != 56158 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_constructor_txinwitness_empty() != 33852 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txinwitness_from_script_witness() != 56962 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txinwitnessbuilder_new() != 60881 {
-        return InitializationResult.apiChecksumMismatch
-    }
     if uniffi_lwk_checksum_constructor_txout_from_explicit() != 4839 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txoutsecrets_from_explicit() != 28633 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txoutsecrets_new() != 11521 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txsequence_enable_locktime_no_rbf() != 13373 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txsequence_enable_rbf_no_locktime() != 49554 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txsequence_from_512_second_intervals() != 22222 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txsequence_from_consensus() != 2537 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txsequence_from_height() != 20065 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txsequence_from_seconds_ceil() != 5132 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txsequence_from_seconds_floor() != 11785 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txsequence_max() != 36924 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_txsequence_zero() != 10154 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_constructor_txid_new() != 63870 {
@@ -20804,20 +17282,13 @@ private var initializationResult: InitializationResult = {
     if uniffi_lwk_checksum_constructor_wollet_new() != 15308 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_constructor_wollet_with_custom_persister() != 63220 {
+    if uniffi_lwk_checksum_constructor_wollet_with_custom_store() != 9255 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_lwk_checksum_constructor_wolletdescriptor_new() != 61281 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_lwk_checksum_constructor_xonlypublickey_from_slice() != 20555 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_lwk_checksum_constructor_xonlypublickey_new() != 10271 {
-        return InitializationResult.apiChecksumMismatch
-    }
 
-    uniffiCallbackInitForeignPersister()
     uniffiCallbackInitForeignStore()
     uniffiCallbackInitLogging()
     return InitializationResult.ok
